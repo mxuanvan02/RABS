@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="360">
+<rect width="100%" height="100%" fill="white"/>
+<text x="410.0" y="26" text-anchor="middle" font-size="16">RABS family objective under burst packet loss</text>
+<line x1="60" y1="300" x2="760" y2="300" stroke="black"/>
+<line x1="60" y1="60" x2="60" y2="300" stroke="black"/>
+<rect x="60" y="85.5493087867695" width="48" height="214.4506912132305" fill="#8da0cb" stroke="#333"/>
+<text x="84.0" y="316" text-anchor="middle" font-size="10" transform="rotate(25 84.0,316)">fixed_b2</text>
+<text x="84.0" y="80.5493087867695" text-anchor="middle" font-size="10">0.165</text>
+<rect x="142" y="102.94383702459979" width="48" height="197.0561629754002" fill="#66c2a5" stroke="#333"/>
+<text x="166.0" y="316" text-anchor="middle" font-size="10" transform="rotate(25 166.0,316)">fixed_b3</text>
+<text x="166.0" y="97.94383702459979" text-anchor="middle" font-size="10">0.152</text>
+<rect x="224" y="81.81818181818184" width="48" height="218.18181818181816" fill="#fc8d62" stroke="#333"/>
+<text x="248.0" y="316" text-anchor="middle" font-size="10" transform="rotate(25 248.0,316)">rabs_h</text>
+<text x="248.0" y="76.81818181818184" text-anchor="middle" font-size="10">0.168</text>
+<rect x="306" y="96.48968801096618" width="48" height="203.51031198903382" fill="#e78ac3" stroke="#333"/>
+<text x="330.0" y="316" text-anchor="middle" font-size="10" transform="rotate(25 330.0,316)">rabs_l</text>
+<text x="330.0" y="91.48968801096618" text-anchor="middle" font-size="10">0.157</text>
+<rect x="388" y="102.14939870746997" width="48" height="197.85060129253003" fill="#a6d854" stroke="#333"/>
+<text x="412.0" y="316" text-anchor="middle" font-size="10" transform="rotate(25 412.0,316)">rabs_pd</text>
+<text x="412.0" y="97.14939870746997" text-anchor="middle" font-size="10">0.153</text>
+<rect x="470" y="162.65989290604102" width="48" height="137.34010709395898" fill="#ffd92f" stroke="#333"/>
+<text x="494.0" y="316" text-anchor="middle" font-size="10" transform="rotate(25 494.0,316)">oracle_b</text>
+<text x="494.0" y="157.65989290604102" text-anchor="middle" font-size="10">0.106</text>
+<text x="18" y="190" font-size="12" transform="rotate(-90 18,190)">Objective</text></svg>
