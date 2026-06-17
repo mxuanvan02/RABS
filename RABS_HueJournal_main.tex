@@ -1,0 +1,463 @@
+% !TEX program = xelatex
+% !TEX root = main.tex
+% !BIB program = bibtex
+% RABS manuscript adapted to the DHH/HUJOS template used by E_StackPPI.zip.
+% Compile from this folder (manuscript):
+%   latexmk -pdfxe -bibtex -interaction=nonstopmode -halt-on-error main.tex
+% Or, from the workspace root:
+%   python3 tools/latex/request_latex_compile.py working/Research/02_Papers/2026_Anomaly_Calibrated_EarlyWarning_Greenhouse_NCS_HueJournal/manuscript/main.tex --wait-timeout 900
+% Output PDF:
+%   manuscript/main.pdf
+\documentclass[10pt]{article}
+\usepackage{float}
+\input{libs/settings}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,decorations.pathmorphing,calc}
+\graphicspath{{figures/}{../manuscript/figures/}{../outputs/figures/}{../outputs/figures_matplotlib/}}
+\hujossetup
+
+\begin{document}
+
+\papertitle{Nghiên cứu mô phỏng điều khiển băng thông thích nghi theo rủi ro cho hệ cảm biến nhà kính thông minh trong điều kiện mất gói dạng chùm}
+
+\paperauthors{Mai Xuân Văn$^{1,*}$, Lê Đức Minh Phương$^{2}$, Nguyễn Tương Tri$^{1,2}$}
+\authoraffil{$^{1}$Trường Đại học Sư phạm, Đại học Huế \quad
+$^{2}$Viện Đào tạo mở và Công nghệ thông tin - Đại học Huế}
+\corremail{mxvan@dhsphue.edu.vn}
+
+\begin{vnabstract}
+Bài báo khảo sát bài toán điều khiển băng thông cho hệ cảm biến nhà kính thông minh khi kênh truyền có mất gói dạng chùm. Khác với cách làm quen thuộc là cố định trước số khe thời gian truyền rồi chỉ chọn cảm biến, nghiên cứu này xem mức băng thông $B_t$ như một biến điều khiển thay đổi theo thời gian và được chọn trước khi gói dữ liệu hiện tại được truyền. Trên cơ sở đó, bài báo đề xuất họ chính sách RABS (Risk-Adaptive Bandwidth Scaling, điều chỉnh băng thông thích nghi theo rủi ro). RABS-H dùng các mốc rủi ro để quyết định khi nào cần tăng hoặc giảm băng thông. RABS-L cân nhắc trực tiếp giữa lợi ích an toàn dự báo và chi phí truyền thông, còn RABS-PD tự điều chỉnh hệ số phạt khi hệ thống dùng quá nhiều băng thông, dữ liệu trở nên quá cũ hoặc nguy cơ bỏ sót vi phạm tăng lên. Sau khi chọn $B_t$, hệ thống cấp quyền truyền cho các cảm biến có mức ưu tiên cao nhất. Kết quả mô phỏng trên dữ liệu vi khí hậu nhà kính cho thấy RABS-PD tiết kiệm 48,7--50,5\% băng thông so với Fixed-B3, đồng thời giảm giá trị hàm mục tiêu khoảng 9,3--10,1\% so với luật ngưỡng RABS-H trên hai kịch bản mất gói dạng chùm. So với Oracle-B, RABS-PD vẫn còn khoảng cách 44,1\% và 29,0\% trong hai kịch bản mạng, cho thấy Oracle-B chỉ là mốc tham chiếu thuận lợi chứ không phải chính sách triển khai được. Các kết quả này cho thấy cần đánh giá chính sách điều khiển băng thông đồng thời theo an toàn, tỷ lệ bỏ sót vi phạm, băng thông trung bình, tuổi thông tin và mức chịu mất gói dạng chùm.
+\end{vnabstract}
+\vnkeywords{nhà kính thông minh; hệ điều khiển qua mạng (NCS); băng thông thích nghi theo rủi ro (RABS); tuổi thông tin; mất gói dạng chùm; lập lịch cảm biến.}
+
+\newpage
+
+\papertitle{A Simulation Study of Risk-Adaptive Bandwidth Scaling for Smart Greenhouse Sensor Systems Under Burst Packet Loss}
+\paperauthors{Xuan Van Mai$^{1,*}$, Duc Minh Phuong Le$^{2}$, Tuong Tri Nguyen$^{1,2}$}
+\authoraffil{$^{1}$University of Education, Hue University \quad
+$^{2}$Institute of Open Education and Information Technology, Hue University}
+\encorremail{mxvan@dhsphue.edu.vn}
+
+\begin{enabstract}
+This paper studies online bandwidth control for smart-greenhouse sensor systems under burst packet loss. Instead of fixing the transmission budget in advance and only choosing sensors, we treat the budget $B_t$ itself as a time-varying control variable selected before the current data packet is transmitted. Based on this view, we propose the RABS family (Risk-Adaptive Bandwidth Scaling). RABS-H is a simple threshold rule, RABS-L uses a predicted loss--cost balancing rule, and RABS-PD uses feedback-based penalty updates to adapt the penalties for bandwidth, information age, and missed-risk events. After selecting $B_t$, the controller grants transmission permission to the highest-priority sensors. Simulations on greenhouse microclimate data show that RABS-PD saves 48.7--50.5\% of bandwidth compared with Fixed-B3 and reduces the objective by about 9.3--10.1\% relative to the RABS-H threshold rule across the two burst-loss scenarios. Compared with Oracle-B, RABS-PD still has gaps of 44.1\% and 29.0\% in the two network scenarios, which confirms that Oracle-B should be read as a favorable reference rather than a deployable policy. These results suggest that bandwidth control should be evaluated jointly by safety, missed violations, average bandwidth, information age, and performance under burst-loss scenarios.
+\end{enabstract}
+\enkeywords{smart greenhouse; networked control systems; risk-adaptive bandwidth scaling (RABS); age of information; burst loss; sensor scheduling.}
+
+\section{Giới thiệu}
+Nhà kính thông minh sử dụng nhiều cảm biến để giám sát nhiệt độ, độ ẩm và các đại lượng vi khí hậu khác, trong bối cảnh Internet vạn vật (Internet of Things, IoT) trong nông nghiệp và hệ thống giám sát nhà kính ngày càng được quan tâm \cite{ayaz2019iotagriculture,shamshiri2018greenhouse,bersani2022greenhouseiot}. Trong hệ thống cảm biến kết nối mạng, dữ liệu không phải lúc nào cũng được truyền đầy đủ do giới hạn băng thông, mất gói và nhiễu kênh truyền, vốn là những vấn đề quen thuộc trong hệ thống điều khiển qua mạng (Networked Control Systems, NCS) \cite{hespanha2007survey,park2018wirelessncs,lu2023codesign}. Nếu băng thông được cấp quá thấp, bộ điều khiển phải dựa vào dữ liệu cũ và có thể bỏ sót trạng thái mất an toàn. Vấn đề này gắn trực tiếp với tuổi thông tin (Age of Information, AoI) \cite{kaul2012realtime,sun2017update,ayan2019aoi}. Ngược lại, nếu luôn duy trì băng thông cao, hệ thống tiêu tốn nhiều tài nguyên truyền thông ngay cả khi môi trường ổn định.
+
+Từ thực tế đó, câu hỏi trung tâm của nghiên cứu là hệ thống nên dùng bao nhiêu băng thông tại mỗi thời điểm để cân bằng giữa an toàn và chi phí truyền thông. Bài báo này tập trung vào biến quyết định mức băng thông $B_t$, thay vì chỉ xét bài toán chọn cảm biến trong một ngân sách truyền thông cố định. Hướng tiếp cận này phù hợp với các hệ thống IoT có khả năng điều chỉnh tần suất lấy mẫu, số khe thời gian truyền hoặc độ ưu tiên truyền thông theo trạng thái vận hành của hệ thống. Trong phạm vi mô phỏng, bài báo hướng tới một khung ra quyết định có thể giải thích được và gần với bối cảnh vận hành nhà kính thông minh, hơn là chứng minh một nghiệm tối ưu tổng quát cho mọi hệ thống NCS.
+
+Bài báo có bốn đóng góp chính. Thứ nhất, nghiên cứu mô hình hóa bài toán điều chỉnh băng thông theo rủi ro cho hệ cảm biến nhà kính thông minh khi kênh truyền bị mất gói dạng chùm, trong đó $B_t$ là biến điều khiển theo thời gian thực thay vì tham số cố định. Thứ hai, bài báo đề xuất họ chính sách điều chỉnh băng thông thích nghi theo rủi ro (Risk-Adaptive Bandwidth Scaling, RABS), chọn $B_t$ từ rủi ro an toàn dự báo, độ cũ của dữ liệu, sai lệch dự kiến và trạng thái mạng ước lượng. Thứ ba, nghiên cứu xây dựng biến thể RABS-PD theo hướng cập nhật mức phạt từ phản hồi vận hành; hệ thống tự điều chỉnh các mức phạt gắn với băng thông, tuổi thông tin và nguy cơ bỏ sót theo diễn biến vận hành, nhờ đó giảm phụ thuộc vào một bộ ngưỡng cố định nhưng vẫn dễ giải thích. Thứ tư, bài báo đánh giá chính sách bằng mô phỏng nhiều lần gieo số, tách riêng các cửa sổ dùng để kiểm tra, so sánh với các benchmark triển khai được lấy cảm hứng từ AoI, rủi ro, giá trị thông tin, truyền theo sự kiện và lập lịch nhận biết kênh, đồng thời dùng Oracle-B và sai khác ghép cặp để đối chiếu. Điểm nhấn của bài không phải là khẳng định một luật ngưỡng tối ưu, mà là làm rõ rằng mức tài nguyên truyền thông nên thay đổi theo mức rủi ro, thay vì được cố định trước rồi mới lập lịch cảm biến.
+
+
+Khác với các hướng lập lịch cảm biến trong đó ngân sách truyền $B$ thường được cho trước và thuật toán chỉ quyết định cảm biến nào được gửi đi, bài báo này xem $B_t$ là đại lượng cần điều khiển theo thời gian. Sau khi chọn $B_t$, hệ thống mới chọn cảm biến ở bước thực thi. Vì vậy, bài báo đóng góp chủ yếu ở quy tắc tăng hoặc giảm băng thông theo rủi ro của hệ thống, chứ không phải ở một công thức chấm điểm cảm biến mới.
+
+
+\section{Tổng quan nghiên cứu liên quan}
+Các hệ thống IoT trong nông nghiệp chính xác thường kết hợp cảm biến, truyền thông không dây và nền tảng xử lý dữ liệu để hỗ trợ giám sát môi trường, tưới tiêu và điều khiển vi khí hậu \cite{ayaz2019iotagriculture,sisinni2018industrialiot,shamshiri2018greenhouse,singh2024greenhouseiot}. Trong bối cảnh nhà kính, các nghiên cứu gần đây nhấn mạnh vai trò của cảm biến phân tán, truyền thông năng lượng thấp, trạm cảm biến di động và tích hợp dữ liệu thời gian thực để nâng cao năng lực kiểm soát môi trường trồng trọt \cite{davcev2018iotagriculture,jawad2020lorawanagri,bersani2022greenhouseiot,guesbaya2023greenhouse,dang2025zerotouch}. Tuy nhiên, nhiều nghiên cứu vẫn tập trung vào kiến trúc IoT tổng quát hoặc ứng dụng giám sát; trong bối cảnh nhà kính thông minh, các nghiên cứu chưa trình bày rõ cơ chế thay đổi mức tài nguyên truyền thông theo rủi ro vận hành.
+
+Trong các hệ thống NCS, chất lượng điều khiển phụ thuộc mạnh vào độ trễ, mất gói, băng thông và cơ chế lập lịch truyền thông \cite{hespanha2007survey,park2018wirelessncs,lu2023codesign}. Các hướng điều khiển theo sự kiện và tự kích hoạt cho thấy hệ thống không nhất thiết phải truyền dữ liệu liên tục, mà có thể gửi dữ liệu khi trạng thái thực sự cần \cite{tabuada2007event,heemels2012event,lu2023codesign}. Tuy vậy, phần lớn các nghiên cứu này vẫn giả định trước cơ chế kích hoạt hoặc mức tài nguyên truyền thông. Bài báo này khác ở chỗ đặt mức băng thông $B_t$ thành biến quyết định theo thời gian thực, sau đó mới chọn cảm biến trong ngân sách đó.
+
+AoI là thước đo quan trọng để đánh giá độ mới của dữ liệu trong hệ thống truyền thông thời gian thực \cite{kaul2012realtime,sun2017update,mena2022aoi}. Các nghiên cứu về AoI và giá trị thông tin (Value of Information) chỉ ra rằng dữ liệu mới không phải lúc nào cũng có giá trị như nhau, vì vậy quyết định truyền nên phụ thuộc vào tác động của thông tin đối với trạng thái hệ thống hoặc hàm mục tiêu điều khiển \cite{ayan2019aoi,wang2021voi,molin2019voi}. RABS kế thừa ý tưởng này nhưng triển khai gọn hơn cho bối cảnh nhà kính: kết hợp xác suất vi phạm, tuổi thông tin, sai lệch cảm biến và xác suất kênh ở trạng thái xấu để chọn mức băng thông.
+
+Mất gói trong mạng không dây thường có tính phụ thuộc theo thời gian, vì vậy mô hình Gilbert--Elliott được sử dụng rộng rãi để mô phỏng kênh có trạng thái tốt/xấu và lỗi dạng chùm \cite{gilbert1960capacity,elliott1963estimates}. Trong bài báo này, hai kịch bản kênh được sử dụng như các kịch bản thử nghiệm kiểm tra chịu tải, gồm mất gói dạng chùm ở mức thông thường và mất gói dạng chùm cường độ cao. Các kịch bản này đại diện cho điều kiện truyền thông mô phỏng, chưa sử dụng dữ liệu đo từ mạng không dây thực tế. Bên cạnh các chính sách dùng để so sánh, bài báo bổ sung hai biến thể trong họ RABS. RABS-L chọn băng thông bằng cách cân nhắc giữa lợi ích an toàn và chi phí truyền thông, còn RABS-PD tự điều chỉnh các hệ số phạt khi băng thông, tuổi thông tin hoặc rủi ro bỏ sót vượt mức mong muốn. Hai biến thể này tạo ra cơ chế điều khiển linh hoạt hơn luật ngưỡng cho bài toán cấp phát tài nguyên theo thời gian.
+
+\section{Phương pháp nghiên cứu}
+Nghiên cứu xây dựng một mô hình mô phỏng theo thời gian rời rạc cho bài toán điều khiển tài nguyên truyền thông trong nhà kính thông minh. Ở mỗi khung thời gian, bộ điều khiển biên lựa chọn ngân sách truyền $B_t$, cấp quyền truyền cho một tập cảm biến và cập nhật trạng thái hệ thống sau khi quá trình truyền qua kênh lỗi chùm kết thúc. Cách xây dựng này đặt RABS trong vai trò một chính sách lập lịch truyền thông, cùng lớp với các hướng điều khiển qua mạng và điều khiển theo sự kiện \cite{hespanha2007survey,tabuada2007event,heemels2012event,lu2023codesign}, thay vì xem RABS như một bộ điều khiển vật lý riêng biệt. Các bước mô hình hóa dưới đây lần lượt xác định kiến trúc hệ thống, tập thông tin dùng để ra quyết định, quy tắc chọn băng thông, cơ chế cập nhật sau truyền và các chỉ số đánh giá.
+
+\paragraph{Mô hình NCS và quy ước thời gian.}
+Xét một hệ thống nhà kính có $N$ cảm biến. Thời gian được chia thành các khung rời rạc, ký hiệu bởi $t$, còn $i\in\{1,\ldots,N\}$ là chỉ số cảm biến. Giá trị vi khí hậu thực tại cảm biến $i$ trong khung $t$ là $x_{i,t}$. Bộ điều khiển biên không luôn quan sát trực tiếp $x_{i,t}$; thay vào đó, nó duy trì giá trị mới nhất đã nhận thành công, ký hiệu là $\hat{x}_{i,t}$. Tuổi thông tin của cảm biến $i$ là $a_{i,t}$, biểu thị số khung đã trôi qua kể từ lần cập nhật thành công gần nhất. Cách mô hình hóa này phản ánh vai trò của độ mới dữ liệu trong truyền thông thời gian thực và trong các bài toán AoI \cite{kaul2012realtime,sun2017update,mena2022aoi}.
+
+Trong bài báo này, cổng biên và bộ điều khiển được mô hình hóa như một nút điều khiển biên duy nhất. Nút này vừa quản lý liên kết truyền thông với cảm biến, vừa duy trì trạng thái phục vụ điều khiển và cảnh báo. RABS không phải là một thiết bị riêng; RABS là chính sách lập lịch chạy bên trong bộ điều khiển biên. Tại đầu khung $t$, trước khi cảm biến gửi gói dữ liệu của khung hiện tại, bộ điều khiển chỉ có tập thông tin trước truyền
+\begin{equation}
+\mathcal{F}_{t^-}=\left\{\hat{x}_{i,t^-},\,a_{i,t^-},\,p_{i,t|t^-},\,\tilde e_{i,t|t^-},\,\pi^{bad}_{t^-}\right\}_{i=1}^{N}.
+\end{equation}
+Trong đó, $\hat{x}_{i,t^-}$ và $a_{i,t^-}$ là trạng thái đang lưu trước khi truyền, $p_{i,t|t^-}$ là rủi ro vi phạm an toàn được dự báo hoặc ước lượng từ thông tin sẵn có trước truyền, $\tilde e_{i,t|t^-}$ là sai lệch dự kiến dùng cho lập lịch, còn $\pi^{bad}_{t^-}$ là xác suất ước lượng kênh đang ở trạng thái xấu. Ký hiệu $t^-$ nhấn mạnh rằng các đại lượng này có trước bước truyền gói trong khung $t$. Giá trị đo hiện tại $x_{i,t}$ không thuộc $\mathcal{F}_{t^-}$ nếu cảm biến chưa được cấp quyền truyền và gói dữ liệu chưa đến bộ điều khiển.
+
+Hình~\ref{fig:rabs_ncs_lifecycle} minh họa luồng dữ liệu tương ứng. Ở đầu khung, bộ điều khiển biên cấp quyền truyền cho một số cảm biến. Sau đó, chỉ các cảm biến được cấp quyền mới phát gói dữ liệu qua liên kết không dây hướng lên. Mất gói dạng chùm được mô phỏng trên liên kết này bằng mô hình Gilbert--Elliott, vốn thường được dùng để biểu diễn kênh có lỗi phụ thuộc theo thời gian \cite{gilbert1960capacity,elliott1963estimates}. Sau khi nhận dữ liệu thành công, bộ điều khiển mới cập nhật trạng thái và phát lệnh tới cơ cấu chấp hành.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.94\linewidth]{rabs_ncs_lifecycle_art.png}
+\caption{Luồng dữ liệu trong NCS nhà kính với RABS đặt tại bộ điều khiển biên. Ở đầu mỗi khung, bộ điều khiển biên cấp quyền truyền $u_{i,t}$ cho tối đa $B_t$ cảm biến. Chỉ các cảm biến được cấp quyền mới gửi gói dữ liệu $x_{i,t}$ qua liên kết không dây hướng lên; mất gói dạng chùm xảy ra trên liên kết này. Sau khi nhận gói dữ liệu thành công, bộ điều khiển cập nhật $\hat{x}_{i,t}$ và phát lệnh tới cơ cấu chấp hành.}
+\label{fig:rabs_ncs_lifecycle}
+\end{figure}
+
+Từ quy ước thời gian trên, bước tiếp theo là xác định biến nào được quyết định ở đầu khung và trạng thái nào chỉ được cập nhật sau khi quá trình truyền kết thúc.
+
+\paragraph{Biến quyết định và cập nhật trạng thái.}
+Ngân sách truyền thông tại khung $t$ được ký hiệu là $B_t$. Trong mô hình này, $B_t$ không phải là lượng băng thông được quyết định sau khi dữ liệu đã đến bộ điều khiển, mà là số cảm biến tối đa được cấp quyền gửi gói dữ liệu trong khung hiện tại. Biến
+\begin{equation}
+u_{i,t}\in\{0,1\},\qquad \sum_{i=1}^{N}u_{i,t}\le B_t,
+\end{equation}
+cho biết cảm biến $i$ có được cấp quyền truyền hay không. Nếu $u_{i,t}=0$, cảm biến không gửi gói dữ liệu trong khung $t$. Nếu $u_{i,t}=1$, gói dữ liệu vẫn có thể bị mất trên kênh truyền.
+
+Gọi $c_{i,t}\in\{0,1\}$ là kết quả truyền, với $c_{i,t}=1$ khi gói của cảm biến $i$ đến bộ điều khiển thành công. Trạng thái lưu tại bộ điều khiển được cập nhật bởi
+\begin{equation}
+\hat{x}_{i,t}=\begin{cases}
+x_{i,t}, & u_{i,t}=1\ \text{và}\ c_{i,t}=1,\\
+\hat{x}_{i,t^-}, & \text{ngược lại},
+\end{cases}
+\end{equation}
+trong khi tuổi thông tin được cập nhật bởi
+\begin{equation}
+a_{i,t}=\begin{cases}
+0, & u_{i,t}=1\ \text{và}\ c_{i,t}=1,\\
+a_{i,t^-}+1, & \text{ngược lại}.
+\end{cases}
+\end{equation}
+Như vậy, mất gói và việc không được cấp quyền truyền đều làm bộ điều khiển tiếp tục sử dụng thông tin cũ. Đây là nguồn gốc của đánh đổi giữa an toàn và chi phí truyền thông trong bài toán này.
+
+Khi cơ chế cập nhật trạng thái đã được xác định, bài toán có thể được lượng hóa bằng một hàm mục tiêu kết hợp mức an toàn, chi phí truyền thông và độ mới dữ liệu.
+
+\paragraph{Hàm mục tiêu và đại lượng đánh giá.}
+Mục tiêu vận hành là giảm tổn thất an toàn trong khi hạn chế chi phí truyền thông và độ cũ dữ liệu. Bài toán được viết dưới dạng
+\begin{equation}
+\min \sum_t \left(L^{safe}_t + \lambda_B B_t + \lambda_A \overline{AoI}_t\right),
+\end{equation}
+trong đó $L^{safe}_t$ là tổn thất an toàn sau khi trạng thái ở khung $t$ được cập nhật, $\overline{AoI}_t=N^{-1}\sum_i a_{i,t}$ là tuổi thông tin trung bình, còn $\lambda_B$ và $\lambda_A$ lần lượt là hệ số phạt cho chi phí truyền thông và độ cũ dữ liệu. Tư duy này gần với các bài toán đánh đổi giữa giá trị thông tin, độ mới dữ liệu và tài nguyên truyền thông \cite{ayan2019aoi,wang2021voi,molin2019voi}.
+
+Để đánh giá sau mô phỏng, bài báo dùng nhãn vi phạm thực tế $v_{i,t}\in\{0,1\}$ và quyết định cảnh báo $\hat v_{i,t}$. Ký hiệu $\mathbb{I}(\cdot)$ là hàm chỉ thị. Quyết định cảnh báo được suy ra từ thông tin mà bộ điều khiển đang lưu sau bước truyền,
+\begin{equation}
+\hat{v}_{i,t}=\mathbb{I}\left(\hat{x}_{i,t}<x_{\min}\ \text{hoặc}\ \hat{x}_{i,t}>x_{\max}\ \text{hoặc}\ p_{i,t|t^-}\ge \tau_p\right),
+\end{equation}
+với $x_{\min}=22$, $x_{\max}=30$ và $\tau_p=0.55$ trong mô phỏng. Sai lệch dùng để đánh giá sau mô phỏng là
+\begin{equation}
+e^{eval}_{i,t}=\min\left(\frac{|x_{i,t}-\hat{x}_{i,t}|}{8},1\right).
+\end{equation}
+Đại lượng này chỉ được dùng để tính kết quả sau khi khung $t$ kết thúc; nó không được dùng như thông tin đầu vào để cấp quyền truyền ở đầu khung. Tổn thất an toàn được tính bởi
+\begin{equation}
+L^{safe}_t=\frac{1}{N}\sum_{i=1}^{N}\left[(e^{eval}_{i,t})^2+5\,\mathbb{I}(v_{i,t}=1,\hat{v}_{i,t}=0)+\mathbb{I}(v_{i,t}=0,\hat{v}_{i,t}=1)\right].
+\end{equation}
+Hệ số 5 làm cho bỏ sót vi phạm bị phạt nặng hơn cảnh báo sai, phù hợp với yêu cầu an toàn trong điều khiển vi khí hậu. Khi báo cáo kết quả, giá trị mục tiêu thực nghiệm được tính nhất quán cho mọi chính sách bằng
+\begin{equation}
+Obj=\frac{1}{T}\sum_{t=1}^{T}L^{safe}_t+0.04\,\overline{B}+0.015\,\overline{AoI},
+\end{equation}
+trong đó $\overline{B}$ và $\overline{AoI}$ lần lượt là băng thông trung bình và tuổi thông tin trung bình trên toàn bộ cửa sổ mô phỏng. Công thức này là thước đo đánh giá sau mô phỏng, không phải một nghiệm tối ưu biết trước toàn bộ chuỗi dữ liệu.
+
+Từ mục tiêu trên, RABS cần một tín hiệu tóm tắt trạng thái trước truyền để quyết định khi nào nên tăng hoặc giảm ngân sách truyền.
+
+\paragraph{Chỉ số rủi ro dùng để cấp quyền truyền.}
+RABS chọn $B_t$ từ thông tin trước truyền $\mathcal{F}_{t^-}$. Chỉ số rủi ro toàn hệ thống được xác định bởi
+\begin{equation}
+R_{t^-} = w_1\max_i p_{i,t|t^-} + w_2\frac{1}{N}\sum_i p_{i,t|t^-} + w_3\min\left(\frac{\overline{AoI}_{t^-}}{8},1\right) + w_4\pi^{bad}_{t^-} + w_5\widetilde E_{t^-},
+\end{equation}
+trong đó $\overline{AoI}_{t^-}=N^{-1}\sum_i a_{i,t^-}$ và $\widetilde E_{t^-}=\max_i\tilde e_{i,t|t^-}$. Trong mô phỏng, sai lệch dự kiến trước truyền được định nghĩa bằng
+\begin{equation}
+\tilde e_{i,t|t^-}=\min\left(\frac{|\hat{x}_{i,t^-}-\mu_{i,t}|}{8},1\right),
+\end{equation}
+trong đó $\hat{x}_{i,t^-}$ là giá trị đang được bộ điều khiển lưu giữ trước khi cấp quyền truyền, còn $\mu_{i,t}$ là tín hiệu nền đã xử lý tại thời điểm $t$. Nếu triển khai với bộ dự báo động học, $\mu_{i,t}$ có thể được thay bằng dự báo một bước $\hat{x}^{pred}_{i,t|t^-}$ mà không làm thay đổi cấu trúc thuật toán. Ký hiệu này tách $\tilde e_{i,t|t^-}$ khỏi $e^{eval}_{i,t}$, vì $e^{eval}_{i,t}$ chỉ xác định được sau khi khung truyền kết thúc và đã biết $x_{i,t}$. Các trọng số trong $R_{t^-}$ được đặt là $w_1=0.45$, $w_2=0.20$, $w_3=0.18$, $w_4=0.10$ và $w_5=0.07$. Đây là các hệ số tiện ích chuẩn hóa theo ưu tiên vận hành: bỏ sót trạng thái nguy hiểm được xem là rủi ro chính, nên thành phần rủi ro cực đại nhận trọng số lớn nhất; rủi ro trung bình và tuổi thông tin phản ánh mức suy giảm toàn hệ thống; trạng thái kênh xấu và sai lệch dự kiến đóng vai trò hiệu chỉnh. Các trọng số được cố định trước khi chạy hai kịch bản mạng và chỉ được dùng như một cấu hình chi phí miền ứng dụng, không phải trọng số được học từ dữ liệu hay nghiệm tối ưu hình thức.
+
+Sau khi có $R_{t^-}$, RABS-H chọn mức băng thông theo luật ba mức
+\begin{equation}
+B_t =
+\begin{cases}
+B_{\min}, & R_{t^-} < \tau_1,\\
+B_{mid}, & \tau_1 \le R_{t^-} < \tau_2,\\
+B_{\max}, & R_{t^-} \ge \tau_2.
+\end{cases}
+\end{equation}
+Trong mô phỏng, $B_{\min}=1$, $B_{mid}=2$, $B_{\max}=3$, $\tau_1=0.38$ và $\tau_2=0.54$. Các giá trị này là tham số mô phỏng được cố định trước khi báo cáo kết quả, chọn từ tìm kiếm lưới trên các cửa sổ hiệu chỉnh 0--8 theo giá trị mục tiêu trung bình; các cửa sổ 9--15 được báo cáo riêng như kiểm tra sau hiệu chỉnh. Khi $B_t$ đã được chọn, cảm biến được xếp hạng bằng điểm ưu tiên trước truyền
+\begin{equation}
+S_{i,t^-}=0.55p_{i,t|t^-}+0.25\tilde e_{i,t|t^-}+0.20\min(a_{i,t^-}/8,1).
+\end{equation}
+Bộ điều khiển cấp quyền truyền cho tối đa $B_t$ cảm biến có $S_{i,t^-}$ cao nhất. Các hệ số $0.55$, $0.25$ và $0.20$ là trọng số ưu tiên cố định, phản ánh thứ tự ưu tiên rủi ro vi phạm, sai lệch dự kiến và độ cũ dữ liệu; các thành phần đều được chuẩn hóa về khoảng $[0,1]$. Nhờ đó, RABS giảm băng thông bằng cách giới hạn số gói dữ liệu được phát lên mạng, chứ không xử lý sau khi toàn bộ dữ liệu đã đến bộ điều khiển.
+
+Luật ngưỡng RABS-H cung cấp một biến thể dễ diễn giải; hai biến thể còn lại thay thế ngưỡng cố định bằng cách so sánh trực tiếp các mức băng thông ứng viên.
+
+\paragraph{RABS-L và RABS-PD.}
+RABS-H dùng luật ngưỡng đơn giản, trong khi RABS-L và RABS-PD đánh giá trực tiếp các mức băng thông ứng viên. Với một mức ứng viên $B\in\{1,2,3\}$, gọi $\mathcal{I}_t(B)$ là tập $B$ cảm biến có điểm $S_{i,t^-}$ cao nhất. Vì quyết định được đưa ra trước truyền, hệ thống không biết chắc gói nào sẽ đến thành công; do đó các đại lượng có dấu mũ dưới đây được hiểu là xấp xỉ dự báo một bước dùng cho quyết định, không phải kết quả quan sát sau truyền. Tuổi thông tin dự báo là
+\begin{equation}
+\widehat{AoI}_{t^-}(B)=\frac{1}{N}\sum_{i=1}^{N}\left[\mathbb{I}(i\in\mathcal{I}_t(B))\cdot 0+\mathbb{I}(i\notin\mathcal{I}_t(B))\cdot(a_{i,t^-}+1)\right].
+\end{equation}
+Rủi ro bỏ sót còn lại được xấp xỉ bởi
+\begin{equation}
+\widehat M_{t^-}(B)=\frac{1}{N}\sum_{i\notin\mathcal{I}_t(B)}p_{i,t|t^-}.
+\end{equation}
+Tổn thất an toàn dự báo $\widehat L^{safe}_{t^-}(B)$ được tính từ các tín hiệu trước truyền bằng
+\begin{equation}
+\widehat L^{safe}_{t^-}(B)=\frac{1}{N}\sum_{i=1}^{N}\left[(1-r_i(B))(\tilde e_{i,t|t^-})^2+5(1-r_i(B))p_{i,t|t^-}\right],\quad
+r_i(B)=\mathbb{I}(i\in\mathcal{I}_t(B)).
+\end{equation}
+Công thức này xấp xỉ việc các cảm biến thuộc $\mathcal{I}_t(B)$ có khả năng được làm mới thông tin, còn các cảm biến còn lại tiếp tục chịu sai lệch dự kiến và rủi ro bỏ sót do dữ liệu cũ. Thành phần cảnh báo sai không được đưa vào $\widehat L^{safe}_{t^-}(B)$ vì trước truyền chưa quan sát được nhãn sau cập nhật; cảnh báo sai chỉ được tính trong $L^{safe}_t$ khi đánh giá kết quả. Trong mô phỏng, RABS-L chọn $B_t$ bằng cách cực tiểu hóa
+\begin{equation}
+\widehat L^{safe}_{t^-}(B)+0.048B+0.016\widehat{AoI}_{t^-}(B)-0.024R_{t^-}B.
+\end{equation}
+Hạng tử cuối cho phép tăng băng thông khi rủi ro hệ thống cao, trong khi hai hạng tử giữa phạt chi phí truyền thông và tuổi thông tin. Các hệ số $0.048$, $0.016$ và $0.024$ là hệ số chi phí thiết kế cho biến thể RABS-L; chúng được đặt gần các hệ số đánh giá sau mô phỏng nhưng tăng nhẹ phạt băng thông và tuổi thông tin để bù tính không chắc chắn của dự báo một bước, đồng thời giữ nguyên trong cả hai kịch bản mạng.
+
+RABS-PD bổ sung các mức phạt động để phản ánh áp lực vận hành tích lũy theo thời gian. Với $[z]_+=\max(z,0)$, hàm điểm của RABS-PD là
+\begin{equation}
+J_t(B)=\widehat L^{safe}_{t^-}(B)+(\beta_B+\eta^B_t)B+(\beta_A+\eta^A_t)\widehat{AoI}_{t^-}(B)+(\beta_M+\eta^M_t)\widehat M_{t^-}(B)-\gamma R_{t^-}B.
+\end{equation}
+Chính sách chọn mức $B$ có $J_t(B)$ nhỏ nhất. Sau khi quá trình truyền trong khung kết thúc và kết quả được quan sát, hệ thống cập nhật các mức phạt theo phản hồi vận hành,
+\begin{equation}
+\eta^{B}_{t+1}=[\eta^B_t+\rho_B(B_t-B^{tar})]_+,\quad
+\eta^{A}_{t+1}=[\eta^A_t+\rho_A(\overline{AoI}_t-A^{tar})]_+,\quad
+\eta^{M}_{t+1}=[\eta^M_t+\rho_M(M_t-M^{tar})]_+.
+\end{equation}
+Ở đây $M_t=FN_t/(TP_t+FN_t)$ nếu khung hiện tại có vi phạm, và $M_t=0$ nếu không có vi phạm. Trong mô phỏng, các hệ số nền là $\beta_B=0.030$, $\beta_A=0.010$, $\beta_M=0.035$, $\gamma=0.030$; các mục tiêu và tốc độ cập nhật lần lượt là $B^{tar}=1.55$, $A^{tar}=1.60$, $M^{tar}=0.008$, $\rho_B=0.010$, $\rho_A=0.006$ và $\rho_M=0.020$. Cơ chế này tách hai vai trò: $R_{t^-}$ phản ánh nhu cầu truyền tức thời, còn $\eta_t$ tích lũy áp lực ràng buộc dài hạn. Cách cập nhật mức phạt này có liên hệ với tư duy tối ưu có ràng buộc và điều khiển mạng ngẫu nhiên \cite{boyd2004convex,neely2010stochastic}. Tuy nhiên, nghiên cứu này không khẳng định hội tụ tối ưu hình thức cho RABS-PD, vì dữ liệu đầu vào, kênh mất gói và hàm chọn $B_t$ đều được xử lý theo mô phỏng hữu hạn. Với bước cập nhật cố định, các mức phạt $\eta_t$ có thể dao động quanh vùng đáp ứng mục tiêu thay vì hội tụ đơn điệu về một điểm; trong thực nghiệm, cơ chế chiếu $[\cdot]_+$ và các tốc độ cập nhật nhỏ được dùng để giữ dao động ở mức vận hành ổn định. Phân tích hội tụ với bước giảm dần hoặc ràng buộc xác suất là hướng mở cho các nghiên cứu tiếp theo.
+
+Các thành phần trên tạo thành một vòng xử lý lặp lại ở mỗi khung thời gian. Quy trình triển khai dưới đây gom các bước mô hình hóa thành một thuật toán trực tuyến.
+
+\paragraph{Quy trình triển khai và độ phức tạp.}
+Tại mỗi khung $t$, RABS lần lượt xây dựng tập thông tin trước truyền $\mathcal{F}_{t^-}$, tính chỉ số $R_{t^-}$, chọn ngân sách $B_t$, xếp hạng cảm biến theo $S_{i,t^-}$ và cấp quyền truyền cho tối đa $B_t$ cảm biến. Sau bước truyền, kênh lỗi chùm quyết định gói nào đến được bộ điều khiển; từ đó hệ thống cập nhật $\hat{x}_{i,t}$, $a_{i,t}$ và, với RABS-PD, các mức phạt phản hồi. Quy trình này được tóm tắt trong Hình~\ref{fig:rabs_architecture} và Thuật toán 1.
+
+\begin{figure}[ht]
+\centering
+\resizebox{0.98\linewidth}{!}{%
+\begin{tikzpicture}[
+    x=1cm,y=1cm,
+    box/.style={draw, rounded corners=3pt, align=center, minimum height=0.95cm, text width=3.05cm, fill=white, font=\small, inner sep=4pt},
+    state/.style={box, fill=green!10},
+    risk/.style={box, fill=orange!12},
+    policy/.style={box, fill=cyan!10, text width=3.15cm},
+    decision/.style={box, fill=blue!8, text width=2.95cm},
+    channel/.style={box, fill=red!8, text width=2.95cm},
+    metric/.style={box, fill=gray!12, text width=3.20cm},
+    dual/.style={box, fill=yellow!16, text width=3.15cm},
+    arr/.style={-{Latex[length=2.2mm]}, thick},
+    feed/.style={-{Latex[length=2.2mm]}, thick, dashed}
+]
+\node[state] (state) at (0,0) {Thông tin trước truyền\\$\mathcal{F}_{t^-}$};
+\node[risk] (risk) at (3.9,0) {Chỉ số rủi ro\\$R_{t^-}$};
+\node[policy] (family) at (7.8,0) {Chính sách RABS\\H / L / PD};
+\node[decision] (budget) at (11.55,0) {Ngân sách\\$B_t\in\{1,2,3\}$};
+\node[decision] (sched) at (15.15,0) {Cấp quyền\\tối đa $B_t$ cảm biến};
+\node[channel] (chan) at (18.75,0) {Kênh lỗi chùm\\truyền gói dữ liệu};
+\node[metric] (ctrl) at (22.55,0) {Cập nhật sau truyền\\$\hat{x}_{i,t}$ và AoI};
+
+\node[metric] (metrics) at (22.55,-2.05) {Chỉ số đánh giá\\an toàn, bỏ sót, AoI, băng thông};
+\node[dual] (dual) at (7.8,-2.05) {RABS-PD\\cập nhật mức phạt\\$\eta^B,\eta^A,\eta^M$};
+
+\draw[arr] (state) -- (risk);
+\draw[arr] (risk) -- (family);
+\draw[arr] (family) -- (budget);
+\draw[arr] (budget) -- (sched);
+\draw[arr] (sched) -- (chan);
+\draw[arr] (chan) -- (ctrl);
+\draw[arr] (ctrl.south) -- (metrics.north);
+\draw[feed] (metrics.west) -- (dual.east);
+\draw[feed] (dual.north) -- (family.south);
+\node[font=\small, fill=white, inner sep=1.5pt] at (18.75,-1.02) {mất gói quyết định cập nhật trạng thái};
+\end{tikzpicture}%
+}
+\caption{Luồng xử lý của RABS trong bộ điều khiển biên. Chính sách bắt đầu từ thông tin trước truyền, chọn ngân sách $B_t$, cấp quyền cho cảm biến, sau đó mới mô phỏng kênh lỗi chùm và cập nhật trạng thái. Sơ đồ nhấn mạnh thứ tự trước--sau của quyết định cấp quyền, truyền gói và cập nhật trạng thái.}
+\label{fig:rabs_architecture}
+\end{figure}
+
+\begin{center}
+\begin{minipage}{0.92\linewidth}
+\hrule
+\vspace{0.4em}
+\textbf{Thuật toán 1. Khung RABS theo thời gian thực}
+\begin{enumerate}
+    \item Tại đầu khung $t$, xây dựng $\mathcal{F}_{t^-}$ từ trạng thái đang lưu, tuổi thông tin, rủi ro dự báo và trạng thái kênh ước lượng.
+    \item Tính chỉ số rủi ro trước truyền $R_{t^-}$.
+    \item Chọn $B_t\in\{1,2,3\}$ bằng luật ngưỡng RABS-H hoặc bằng điểm ứng viên của RABS-L/RABS-PD.
+    \item Tính điểm ưu tiên $S_{i,t^-}$ và cấp quyền truyền cho tối đa $B_t$ cảm biến có điểm cao nhất.
+    \item Các cảm biến được cấp quyền gửi gói dữ liệu; kênh Gilbert--Elliott quyết định gói đến thành công hay bị mất.
+    \item Cập nhật $\hat{x}_{i,t}$ và $a_{i,t}$ theo kết quả truyền; nếu dùng RABS-PD, cập nhật $\eta^B_t$, $\eta^A_t$ và $\eta^M_t$ từ phản hồi vận hành.
+\end{enumerate}
+\vspace{0.2em}
+\hrule
+\end{minipage}
+\end{center}
+
+Vì số mức băng thông ứng viên nhỏ, chi phí tính toán của RABS chủ yếu nằm ở bước xếp hạng cảm biến. Nếu sắp xếp đầy đủ, độ phức tạp mỗi khung là $O(|\mathcal{B}|N+N\log N)$. Nếu chọn tuần tự $B_t$ cảm biến tốt nhất khi $B_t$ nhỏ, độ phức tạp có thể viết là $O(|\mathcal{B}|N+NB_t)$. Do đó, chính sách phù hợp với bộ điều khiển biên có tài nguyên tính toán hạn chế.
+
+Sau khi xác định mô hình và thuật toán, phần thực nghiệm mô tả dữ liệu, kênh truyền mô phỏng, các chính sách đối chiếu và bộ chỉ số dùng để đánh giá cùng một vòng xử lý.
+
+\paragraph{Thiết lập thực nghiệm và chỉ số đánh giá.}
+Thực nghiệm sử dụng dữ liệu vi khí hậu nhà kính đã xử lý từ bộ dữ liệu nhà kính công khai trên Mendeley Data \cite{greenhouse2021mendeley}. Bộ dữ liệu gốc có 48.360 dòng, được tổ chức thành tám cửa sổ dữ liệu và ba vòng cảm biến, gồm giá trị đo $x_t$, giá trị nền $\mu_t$, nhãn vi phạm an toàn, tuổi thông tin và xác suất rủi ro. Sau khi ghép ba vòng cảm biến theo từng bước thời gian, chuỗi mô phỏng dài 16.120 bước được chia thành 16 cửa sổ mô phỏng có độ dài 1.000 bước; thuật ngữ \emph{cửa sổ} trong phần kết quả luôn chỉ các cửa sổ mô phỏng này. Các tín hiệu $p_{i,t|t^-}$ và $\tilde e_{i,t|t^-}$ được dùng như thông tin rủi ro trước truyền trong mô phỏng, còn $x_{i,t}$ và $v_{i,t}$ được dùng để cập nhật hoặc đánh giá sau khi kết quả truyền đã được xác định.
+
+Mạng truyền thông được mô phỏng bằng hai kịch bản Gilbert--Elliott: mất gói dạng chùm và mất gói dạng chùm cường độ cao. Với kịch bản mất gói dạng chùm, các tham số lần lượt là xác suất mất gói ở trạng thái tốt 0,06, xác suất chuyển tốt--xấu 0,035, xác suất mất gói ở trạng thái xấu 0,65 và xác suất chuyển xấu--tốt 0,22. Với kịch bản mất gói dạng chùm cường độ cao, các giá trị tương ứng là 0,08, 0,055, 0,82 và 0,15. Các kịch bản này là điều kiện truyền thông mô phỏng để kiểm tra độ nhạy của chính sách, chưa phải dữ liệu đo trực tiếp từ mạng truyền thông thật.
+
+Các chính sách so sánh gồm bốn nhóm. Nhóm thứ nhất giữ băng thông cố định, gồm Fixed-B1, Fixed-B2 và Fixed-B3. Nhóm thứ hai gồm các chính sách đối chiếu triển khai được, lấy cảm hứng từ những hướng lập lịch quen thuộc: Max-AoI ưu tiên cảm biến có dữ liệu cũ nhất; Max-Risk ưu tiên cảm biến có xác suất vi phạm cao nhất; VoI-B2 chọn cảm biến theo giá trị thông tin trong ngân sách cố định $B=2$; Event-triggered tăng số cảm biến truyền khi rủi ro, sai lệch hoặc tuổi thông tin vượt ngưỡng; Channel-aware giảm số lần truyền khi xác suất kênh xấu tăng. Nhóm thứ ba là họ chính sách RABS, gồm RABS-H, RABS-L và RABS-PD. Oracle-B chọn mức băng thông tốt nhất cho từng thời điểm theo hàm mục tiêu dự đoán và chỉ được dùng như mốc tham chiếu thuận lợi, không phải phương án có thể triển khai trực tiếp trong thực tế.
+
+Các chỉ số đánh giá gồm tổn thất trung bình, tỷ lệ bỏ sót vi phạm, tỷ lệ cảnh báo sai, F1, băng thông trung bình, tỷ lệ tiết kiệm băng thông so với Fixed-B3, tuổi thông tin trung bình, tuổi thông tin cực đại, chỉ số công bằng Jain \cite{jain1984fairness} và tỷ lệ truyền gói thành công.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.92\linewidth,height=5.2cm,
+    xlabel={Thời gian trong cửa sổ (giờ)},
+    ylabel={Nhiệt độ chuẩn hóa},
+    xmin=0,xmax=24,ymin=0.55,ymax=0.95,
+    grid=major, grid style={gray!20},
+    legend style={font=\footnotesize, at={(0.5,-0.20)}, anchor=north, legend columns=3, draw=none},
+    tick label style={font=\footnotesize}, label style={font=\small}
+]
+\addplot[blue, thick, mark=none] coordinates {(0,0.64) (2,0.66) (4,0.70) (6,0.76) (8,0.83) (10,0.87) (12,0.90) (14,0.86) (16,0.80) (18,0.75) (20,0.70) (22,0.67) (24,0.65)};
+\addlegendentry{Cảm biến nhà kính}
+\addplot[red, dashed, thick] coordinates {(0,0.82) (24,0.82)};
+\addlegendentry{Ngưỡng trên}
+\addplot[red, dashed, thick] coordinates {(0,0.62) (24,0.62)};
+\addlegendentry{Ngưỡng dưới}
+\end{axis}
+\end{tikzpicture}
+\caption{Minh họa chuỗi nhiệt độ nhà kính và miền an toàn dùng trong mô phỏng cảnh báo. Hình này thể hiện cấu trúc dữ liệu đầu vào; các chỉ số định lượng được tính từ toàn bộ dữ liệu mô phỏng trong Bảng~\ref{tab:rabs_summary}.}
+\label{fig:greenhouse_temperature_sample}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.82\linewidth,height=5.3cm,
+    xlabel={Cửa sổ thời gian}, ylabel={Cảm biến},
+    xtick={0,1,2,3,4,5,6,7}, ytick={1,2,3},
+    yticklabels={Cảm biến 1,Cảm biến 2,Cảm biến 3},
+    colormap/viridis, colorbar,
+    colorbar style={ylabel={Rủi ro trung bình}},
+    point meta min=0.10, point meta max=0.90,
+    tick label style={font=\footnotesize}, label style={font=\small}
+]
+\addplot[matrix plot*, mesh/cols=8, point meta=explicit] coordinates {
+(0,1) [0.18] (1,1) [0.22] (2,1) [0.35] (3,1) [0.48] (4,1) [0.62] (5,1) [0.55] (6,1) [0.40] (7,1) [0.28]
+(0,2) [0.25] (1,2) [0.31] (2,2) [0.44] (3,2) [0.58] (4,2) [0.72] (5,2) [0.66] (6,2) [0.51] (7,2) [0.36]
+(0,3) [0.14] (1,3) [0.20] (2,3) [0.29] (3,3) [0.41] (4,3) [0.53] (5,3) [0.47] (6,3) [0.33] (7,3) [0.24]
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Ma trận nhiệt minh họa rủi ro trung bình theo cảm biến và cửa sổ thời gian. Hình nhấn mạnh trực giác rủi ro không đồng nhất theo thời gian; các chỉ số định lượng được tổng hợp riêng trong Bảng~\ref{tab:rabs_summary}.}
+\label{fig:risk_heatmap_loop_window}
+\end{figure}
+
+\section{Kết quả}
+Bảng~\ref{tab:rabs_summary} trình bày kết quả tổng hợp trên 16 cửa sổ thời gian và 20 lần gieo số ngẫu nhiên cho mỗi kịch bản mạng. Các kết quả cho thấy ba xu hướng chính. Thứ nhất, các chính sách đối chiếu triển khai được phản ánh những đánh đổi quen thuộc: Max-AoI cải thiện độ mới dữ liệu so với Fixed-B2 nhưng chưa tối ưu theo rủi ro; Max-Risk làm tuổi thông tin của một số cảm biến tăng cao do tập trung vào xác suất vi phạm tức thời; VoI-B2 là mốc đối chiếu mạnh trong nhóm ngân sách cố định nhờ kết hợp rủi ro, sai lệch dự kiến và độ cũ dữ liệu. Thứ hai, RABS-PD tạo ra điểm cân bằng tốt hơn RABS-H và RABS-L: chính sách này dùng khoảng một nửa băng thông của Fixed-B3 nhưng vẫn giữ giá trị hàm mục tiêu thấp hơn Fixed-B2 và gần với các chính sách đối chiếu mạnh nhất. Thứ ba, khi các quyết định chỉ dùng thông tin trước truyền, khoảng cách tới Oracle-B trở nên rõ ràng hơn; vì vậy Oracle-B nên được hiểu là mốc tham chiếu thuận lợi, không phải đối chứng triển khai được. Các kết quả này phản ánh hiệu năng trong thiết lập mô phỏng có kiểm soát với dữ liệu vi khí hậu đã xử lý và kênh truyền Gilbert--Elliott.
+
+\begin{table}[ht]
+\centering
+\caption{So sánh chính sách điều khiển băng thông trong điều kiện mất gói dạng chùm và mất gói dạng chùm cường độ cao. Các giá trị là trung bình trên các cửa sổ và 20 lần gieo số; khoảng tin cậy 95\% được lưu trong dữ liệu bổ sung.}
+\label{tab:rabs_summary}
+\resizebox{\linewidth}{!}{\input{../outputs/tables/table_rabs_summary.tex}}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{Kết quả trên các cửa sổ 9--15 được tách riêng để kiểm tra sau khi cố định cấu hình chính sách. Các giá trị là trung bình trên 20 lần gieo số; khoảng tin cậy 95\% được lưu trong dữ liệu bổ sung.}
+\label{tab:rabs_holdout_summary}
+\resizebox{0.96\linewidth}{!}{\input{../outputs/tables/table_rabs_holdout_summary.tex}}
+\end{table}
+
+Để kiểm định ý nghĩa thống kê thay vì chỉ dựa vào giá trị trung bình, nghiên cứu tính sai khác ghép cặp giữa RABS-PD và từng đối chứng trên cùng kịch bản mạng, cửa sổ thời gian và lần gieo số ($n=320$ cặp cho mỗi kịch bản, gồm 16 cửa sổ và 20 lần gieo số). Trên mỗi cặp đó, bài báo áp dụng kiểm định thứ hạng dấu Wilcoxon (Wilcoxon signed-rank, hai phía), báo cáo khoảng tin cậy 95\% của sai khác trung bình theo phân phối $t$, kích thước hiệu ứng $r=Z/\sqrt{n}$ và hiệu chỉnh đa so sánh Holm--Bonferroni trong từng nhóm (kịch bản, chỉ số). Bảng~\ref{tab:rabs_wilcoxon} tóm tắt kết quả cho hàm mục tiêu và tỷ lệ bỏ sót.
+
+Kết quả kiểm định cho thấy ba điểm. Thứ nhất, so với luật ngưỡng RABS-H, RABS-PD giảm hàm mục tiêu một cách có ý nghĩa thống kê mạnh trong cả hai kịch bản ($p<0{,}001$ sau hiệu chỉnh Holm, kích thước hiệu ứng $r\approx0{,}78$--$0{,}81$, thắng 285--292/320 cặp), khẳng định rằng lợi thế của cơ chế cập nhật mức phạt không phải do nhiễu ngẫu nhiên. Thứ hai, về băng thông trung bình, RABS-PD tiết kiệm khoảng một nửa so với Fixed-B3 với mức ý nghĩa rất cao ($p<0{,}001$, $r\approx0{,}87$, thắng 320/320 cặp). Thứ ba, đáng chú ý là về hàm mục tiêu, RABS-PD và Fixed-B3 \emph{không khác biệt có ý nghĩa thống kê} trong kịch bản mất gói dạng chùm ($\Delta\approx+0{,}0006$, $p=0{,}28$), trong khi ở kịch bản cường độ cao RABS-PD lại tốt hơn Fixed-B3 có ý nghĩa ($p<0{,}001$, $r\approx0{,}36$). Như vậy, đóng góp định lượng cốt lõi không phải là "giảm hàm mục tiêu so với Fixed-B3", mà là \emph{đạt mức an toàn--hàm mục tiêu tương đương Fixed-B3 nhưng chỉ dùng khoảng một nửa băng thông}, với mức tiết kiệm được kiểm định chặt chẽ. Diễn giải này trung thực hơn so với việc chỉ so sánh giá trị trung bình và phù hợp với bản chất đánh đổi an toàn--băng thông của bài toán.
+
+\begin{table}[ht]
+\centering
+\caption{Kiểm định thứ hạng dấu Wilcoxon ghép cặp ($n=320$) giữa RABS-PD và các đối chứng. $\Delta$TB là sai khác trung bình (âm nghĩa là RABS-PD nhỏ hơn, tức tốt hơn với chỉ số cần cực tiểu), KTC 95\% theo phân phối $t$, $p$ đã hiệu chỉnh Holm--Bonferroni, $r$ là kích thước hiệu ứng.}
+\label{tab:rabs_wilcoxon}
+\resizebox{\linewidth}{!}{\input{../outputs/tables/table_rabs_wilcoxon.tex}}
+\end{table}
+
+Bảng này cũng làm rõ vai trò của từng nhóm chính sách. Fixed-B1/B2/B3 làm rõ ảnh hưởng của mức băng thông cố định. Các chính sách Max-AoI, Max-Risk, VoI-B2, Event-triggered và Channel-aware đại diện cho những quy tắc lập lịch triển khai được nhưng chỉ tối ưu một phần của bài toán. RABS-H kết hợp nhiều tín hiệu bằng các mốc rủi ro, trong khi RABS-L và RABS-PD đánh giá trực tiếp từng mức $B_t$ có thể chọn theo thông tin trước truyền. Kết quả cho thấy điều khiển băng thông có ràng buộc rủi ro tạo ra một điểm vận hành tiết kiệm băng thông hơn Fixed-B3, nhưng vẫn cần được diễn giải trong giới hạn của mô phỏng và mô hình dự báo rủi ro.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar, bar width=7pt,
+    width=0.92\linewidth,height=5.4cm,
+    ylabel={Giá trị hàm mục tiêu},
+    symbolic x coords={Fixed-B2,Fixed-B3,RABS-H,RABS-L,RABS-PD,Oracle},
+    xtick=data, x tick label style={rotate=25,anchor=east,font=\footnotesize},
+    ymin=0.09,ymax=0.19, grid=major, grid style={gray!20},
+    legend style={font=\footnotesize, at={(0.02,0.98)}, anchor=north west},
+    label style={font=\small}
+]
+\addplot[fill=blue!45] coordinates {(Fixed-B2,0.1653) (Fixed-B3,0.1519) (RABS-H,0.1682) (RABS-L,0.1569) (RABS-PD,0.1525) (Oracle,0.1059)};
+\addplot[fill=orange!60] coordinates {(Fixed-B2,0.1856) (Fixed-B3,0.1724) (RABS-H,0.1853) (RABS-L,0.1723) (RABS-PD,0.1666) (Oracle,0.1292)};
+\legend{Chùm lỗi, Chùm lỗi cường độ cao}
+\end{axis}
+\end{tikzpicture}
+\caption{So sánh hàm mục tiêu của các chính sách đại diện. RABS-L và RABS-PD cho giá trị hàm mục tiêu thấp hơn rõ rệt so với RABS-H, trong khi RABS-PD chấp nhận dùng thêm một phần băng thông để giữ dữ liệu mới hơn.}
+\label{fig:rabs_objective_burst}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.84\linewidth,height=5.6cm,
+    xlabel={Băng thông trung bình}, ylabel={Tổn thất an toàn trung bình},
+    xmin=0.8,xmax=3.2,ymin=0.02,ymax=0.115,
+    grid=major, grid style={gray!20},
+    legend style={font=\footnotesize, at={(0.98,0.98)}, anchor=north east},
+    tick label style={font=\footnotesize}, label style={font=\small}
+]
+\addplot[only marks, mark=*, mark size=2.8pt, blue] coordinates {(1.0,0.1062) (2.0,0.0673) (3.0,0.0290) (2.22,0.0668) (1.10,0.0866) (1.49,0.0758)};
+\addlegendentry{Chùm lỗi}
+\addplot[only marks, mark=square*, mark size=2.8pt, orange] coordinates {(1.0,0.1214) (2.0,0.0797) (3.0,0.0440) (2.27,0.0764) (1.17,0.0933) (1.54,0.0831)};
+\addlegendentry{Chùm lỗi cường độ cao}
+\node[font=\footnotesize] at (axis cs:1.0,0.110){B1};
+\node[font=\footnotesize] at (axis cs:2.0,0.070){B2};
+\node[font=\footnotesize] at (axis cs:3.0,0.033){B3};
+\node[font=\footnotesize] at (axis cs:2.30,0.079){H};
+\node[font=\footnotesize] at (axis cs:1.18,0.098){L};
+\node[font=\footnotesize] at (axis cs:1.58,0.087){PD};
+\end{axis}
+\end{tikzpicture}
+\caption{Đánh đổi giữa tổn thất an toàn và băng thông trung bình. Fixed-B3 đạt tổn thất thấp nhất trong các chính sách triển khai được nhờ dùng toàn bộ băng thông, trong khi RABS-PD giảm đáng kể băng thông và chấp nhận tăng tổn thất an toàn ở mức có kiểm soát.}
+\label{fig:rabs_tradeoff_burst}
+\end{figure}
+
+\begin{table}[ht]
+\centering
+\caption{Khoảng cách của RABS-H/RABS-PD so với mốc Oracle-B theo hàm mục tiêu.}
+\label{tab:rabs_oracle_gap}
+\resizebox{0.90\linewidth}{!}{\input{../outputs/tables/table_rabs_oracle_gap.tex}}
+\end{table}
+
+Trong kịch bản mất gói dạng chùm, RABS-H đạt giá trị hàm mục tiêu 0.1682 với băng thông trung bình 2.22, trong khi RABS-PD đạt 0.1525 với băng thông trung bình 1.49. Như vậy, RABS-PD giảm khoảng 9,3\% giá trị hàm mục tiêu so với luật ngưỡng RABS-H và tiết kiệm 50,5\% băng thông so với Fixed-B3. Trong kịch bản mất gói dạng chùm cường độ cao, RABS-PD đạt giá trị hàm mục tiêu 0.1666, băng thông trung bình 1.54 và tiết kiệm 48,7\% so với Fixed-B3. Đổi lại, tỷ lệ bỏ sót của RABS-PD cao hơn Fixed-B3, cho thấy đây là đánh đổi an toàn--băng thông chứ không phải cải thiện đồng thời ở mọi chỉ số.
+
+Kết quả trên phần cửa sổ cuối được tách riêng để kiểm tra (các cửa sổ 9--15) tiếp tục củng cố xu hướng tiết kiệm băng thông, với khoảng cách Oracle-B trên tập kiểm tra này là 40,8\% ở kịch bản mất gói dạng chùm và 25,7\% ở kịch bản cường độ cao. Trên toàn bộ dữ liệu, Bảng~\ref{tab:rabs_oracle_gap} cho thấy khoảng cách với Oracle-B còn khá lớn: RABS-PD cách mốc Oracle-B 44,1\% ở kịch bản mất gói dạng chùm và 29,0\% ở kịch bản mất gói dạng chùm cường độ cao. Điều này phù hợp với cách định nghĩa Oracle-B như mốc tham chiếu thuận lợi có quyền dùng thông tin sau truyền khi đánh giá ứng viên. Kết quả này không có nghĩa RABS-PD là nghiệm tối ưu cho toàn bộ quá trình, mà cho thấy chính sách tự điều chỉnh mức phạt có thể tạo ra điểm vận hành tiết kiệm băng thông hơn luật ngưỡng cố định trong khi vẫn giữ hàm mục tiêu ở mức cạnh tranh.
+
+\paragraph{Phân tích độ nhạy theo trọng số rủi ro.}
+Vì chỉ số rủi ro $R_{t^-}$ dùng năm trọng số tiện ích $w_1,\ldots,w_5$ được đặt theo ưu tiên vận hành, nghiên cứu kiểm tra độ bền của kết quả bằng cách chạy lại toàn bộ mô phỏng với năm cấu hình trọng số khác nhau: cơ sở, ưu tiên rủi ro, ưu tiên tuổi thông tin, ưu tiên trạng thái kênh và cân bằng. Bảng~\ref{tab:rabs_weight_sensitivity} cho thấy RABS-PD rất ít nhạy với lựa chọn trọng số: hàm mục tiêu chỉ dao động trong khoảng $0{,}1586$--$0{,}1598$ với hệ số biến thiên chỉ $0{,}2\%$. Ngược lại, luật ngưỡng RABS-H nhạy hơn nhiều (hệ số biến thiên $2{,}5\%$, gấp hơn mười lần), vì hiệu năng của nó phụ thuộc trực tiếp vào vị trí các mốc $\tau_1,\tau_2$ so với phân bố của $R_{t^-}$. Kết quả này cho thấy cơ chế đánh giá trực tiếp từng mức $B_t$ kèm cập nhật mức phạt giúp RABS-PD giảm phụ thuộc vào việc tinh chỉnh trọng số, một ưu điểm quan trọng khi triển khai thực tế vì người vận hành khó dò được bộ trọng số tối ưu cho từng nhà kính.
+
+\begin{table}[ht]
+\centering
+\caption{Độ nhạy của hàm mục tiêu theo năm cấu hình trọng số rủi ro. Hệ số biến thiên (CV) càng nhỏ thể hiện chính sách càng ít phụ thuộc vào tinh chỉnh trọng số.}
+\label{tab:rabs_weight_sensitivity}
+\resizebox{\linewidth}{!}{\input{../outputs/tables/table_rabs_weight_sensitivity.tex}}
+\end{table}
+
+\section{Thảo luận}
+Kết quả cho thấy điều chỉnh băng thông thích nghi khác với lập lịch cảm biến trong ngân sách truyền thông cố định. Fixed-B3 đạt tổn thất thấp nhờ dùng toàn bộ băng thông, trong khi Fixed-B1 tiết kiệm tài nguyên nhưng làm tăng tuổi thông tin. RABS nằm giữa hai cực này và chọn ngân sách theo rủi ro hệ thống.
+
+Về mặt ứng dụng, kết quả này phù hợp với các nhà kính bị ràng buộc bởi năng lượng hoặc chi phí truyền thông, nơi hệ thống không nên duy trì băng thông cực đại liên tục. Trong các giai đoạn môi trường ổn định, chính sách thích nghi có thể giảm số cảm biến cần truyền mà vẫn giữ mức rủi ro chấp nhận được. Khi tín hiệu rủi ro, tuổi thông tin hoặc xác suất kênh ở trạng thái xấu tăng lên, hệ thống tự động nâng ngân sách để khôi phục độ mới thông tin. Nhờ vậy, hệ thống quyết định truyền thông theo rủi ro vi khí hậu thay vì chỉ dựa trên lịch truyền cố định.
+
+RABS-H hiện là một luật có cấu trúc, dễ triển khai nhưng phụ thuộc vào các ngưỡng cố định. Vì vậy, hiệu năng của RABS-H thay đổi theo kịch bản: trong kịch bản mất gói dạng chùm, Fixed-B2 có giá trị hàm mục tiêu tốt hơn RABS-H (0.1653 so với 0.1682), trong khi ở kịch bản mất gói dạng chùm cường độ cao RABS-H lại tốt hơn Fixed-B2 (0.1853 so với 0.1856). Sự đảo chiều này cho thấy luật ngưỡng cố định có thể hữu ích khi rủi ro mạng tăng, nhưng chưa ổn định trên mọi chế độ vận hành. Kết quả cho thấy RABS-L và RABS-PD tạo ra đóng góp mạnh hơn: hai biến thể này đánh giá trực tiếp các mức $B_t$ theo thông tin trước truyền, đồng thời cập nhật mức phạt theo các ràng buộc vận hành. RABS-PD không phải nghiệm tối ưu toàn cục, nhưng cung cấp cơ chế thích nghi rõ ràng. Khi hệ thống dùng quá nhiều băng thông, dữ liệu quá cũ hoặc rủi ro bỏ sót tăng, mức phạt tương ứng sẽ làm thay đổi điểm lựa chọn ở các bước sau. Biến thể này vẫn có hạn chế: người triển khai cần chọn các mục tiêu $B^{tar}$, $A^{tar}$, $M^{tar}$ và tốc độ cập nhật theo yêu cầu vận hành.
+
+Kết quả có thể được diễn giải theo ba mức độ. Trước hết, trong thiết lập mô phỏng hiện tại, điều chỉnh $B_t$ theo rủi ro tạo ra đánh đổi linh hoạt hơn so với giữ ngân sách truyền thông cố định hoặc phản ứng theo một tín hiệu đơn lẻ. Tiếp theo, RABS-PD cho thấy lợi ích của cơ chế cập nhật mức phạt khi hệ thống có thể quan sát các phản hồi vận hành như băng thông trung bình, tuổi thông tin và tỷ lệ bỏ sót. Cuối cùng, khả năng chuyển nguyên lý này sang nhà kính thực và mạng không dây thực tế vẫn cần được kiểm chứng thêm, đặc biệt khi $B_t$ được ánh xạ sang số khe thời gian truyền, chu kỳ lấy mẫu hoặc độ ưu tiên gói tin.
+
+\paragraph{Giới hạn và hướng phát triển.}
+Nghiên cứu vẫn có một số giới hạn có thể ảnh hưởng đến độ tin cậy của kết quả. Thứ nhất, RABS dùng luật ngưỡng và trọng số cố định được chọn thông qua tìm kiếm lưới, nên cách này đơn giản nhưng chưa bảo đảm tối ưu. Thứ hai, Oracle-B chỉ là mốc so sánh theo từng thời điểm, chưa phải nghiệm tối ưu trên toàn bộ chuỗi thời gian. Thứ ba, thực nghiệm hiện dựa trên dữ liệu nhà kính đã xử lý và mô phỏng mất gói Gilbert--Elliott, nên cần kiểm chứng thêm với dữ liệu đo truyền thông thực tế. Thứ tư, mô phỏng hiện giả định bộ điều khiển có thể thay đổi ngân sách truyền $B_t$ theo thời gian; khi triển khai thật, cần ánh xạ quyết định này sang số khe thời gian truyền, tần suất lấy mẫu hoặc độ ưu tiên mạng cụ thể.
+
+Các bước tiếp theo nên tự động tối ưu tham số điều chỉnh mức phạt, bổ sung ràng buộc xác suất cho tỷ lệ bỏ sót và đánh giá chính sách trên dữ liệu đo truyền thông thực tế để kiểm tra độ bền khi giả định về mất gói dạng chùm không còn đúng hoàn toàn. Một hướng kiểm tra bổ sung là phân tích độ nhạy của các trọng số tiện ích tĩnh, vì trong nghiên cứu này chúng được chọn theo ưu tiên vận hành chứ chưa được suy ra từ tối ưu hóa tham số hoặc khảo sát chi phí thực địa.
+
+\section{Kết luận}
+Bài báo đã trình bày bài toán điều chỉnh băng thông thích nghi cho hệ cảm biến nhà kính thông minh trong điều kiện mất gói dạng chùm và đề xuất chính sách RABS. Nghiên cứu khác với các hướng quen thuộc ở chỗ xem mức băng thông $B_t$ như một biến điều khiển theo thời gian thực, thay vì giả định ngân sách truyền thông cố định rồi chỉ tối ưu bước chọn cảm biến. Chính sách RABS kết hợp rủi ro an toàn dự báo, tuổi thông tin, xác suất kênh ở trạng thái xấu và sai lệch dự kiến để chọn mức băng thông theo thời gian.
+
+Kết quả thực nghiệm, bao gồm phần kiểm tra trên các cửa sổ thời gian được tách riêng, cho thấy điều chỉnh băng thông linh hoạt khác với lập lịch cảm biến trong ngân sách truyền thông cố định, đồng thời giúp hệ thống đánh đổi có kiểm soát giữa tiết kiệm băng thông và an toàn vi khí hậu. RABS-PD giúp giảm phụ thuộc vào băng thông cực đại và thu hẹp đáng kể khoảng cách với Oracle-B so với RABS-H. Trong các bước tiếp theo, nghiên cứu sẽ mở rộng chính sách bằng tối ưu tham số tự động, đánh giá trên nhiều bộ dữ liệu nhà kính, bổ sung dữ liệu đo truyền thông thực tế và phân tích sâu hơn mức phục hồi sau các giai đoạn mất gói dạng chùm.
+
+\section*{Dữ liệu và mã mô phỏng}
+Các kết quả định lượng được sinh từ dữ liệu dạng bảng đã xử lý và mã mô phỏng đi kèm nghiên cứu. Mô hình mất gói sử dụng kênh Gilbert--Elliott để biểu diễn điều kiện truyền thông dạng chùm, trong khi Oracle-B đóng vai trò mốc so sánh thuận lợi theo từng thời điểm. Các bảng và hình kết quả được tạo từ đầu ra mô phỏng; Hình~\ref{fig:rabs_architecture} là sơ đồ minh họa quy trình phương pháp. Mã mô phỏng, bảng kết quả và dữ liệu đã xử lý được công bố công khai tại kho mã nguồn của bài báo: \url{https://github.com/maixuanvan/RABS-greenhouse-NCS}.
+
+\bibliographystyle{vancouver}
+\bibliography{refs}
+
+\section*{Thông tin tác giả}
+\begin{sloppypar}
+\textbf{Xuan Van Mai} -- Hue University of Education, Hue University, Viet Nam. Email: mxvan@dhsphue.edu.vn. ORCID: 0009-0004-7083-4737. Tác giả liên hệ.\\
+\textbf{Tuong Tri Nguyen} -- Hue University of Education, Hue University, Viet Nam; Institute of Open Education and Information Technology, Hue University, Viet Nam. Email: nguyentuongtri@dhsphue.edu.vn. ORCID: 0000-0002-1379-0131.
+\end{sloppypar}
+
+\end{document}

@@ -1,6 +1,0 @@
-# Core simulation (run_rabs_adaptive_bandwidth.py, run_rabs_weight_sensitivity.py)
-# uses only the Python standard library — no install required.
-#
-# Optional, only for the significance analysis and figures:
-scipy>=1.10
-matplotlib>=3.7
