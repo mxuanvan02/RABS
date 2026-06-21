@@ -1,5 +1,25 @@
+# --- Python ---
 __pycache__/
 *.pyc
 .DS_Store
 *.log
 .ipynb_checkpoints/
+.venv/
+venv/
+
+# --- Internal backups / working copies ---
+_backups/
+**/_backup_*/
+*_OLD_*
+
+# --- Generated results: regenerate by running the scripts (not shipped) ---
+# The repository ships code + source data only; results are reproduced by
+# re-running the scripts, not trusted from a committed copy.
+outputs/
+figures/
+*.png
+*.svg
+
+# --- Manuscript / drafts do not belong in the code repository ---
+*.tex
+*_draft*.md
