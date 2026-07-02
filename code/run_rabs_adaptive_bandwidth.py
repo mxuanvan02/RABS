@@ -113,7 +113,14 @@ def choose_sensors(true,hat,age,B,policy='rabs'):
         elif policy=='channel_aware':
             score=0.45*true[i]['p']+0.35*err+0.20*age_score
         else:
-            score=0.55*true[i]['p']+0.25*err+0.20*age_score
+            # RABS urgency: value-of-uncertainty (VoU) risk channel.
+            # Polling has value only when a fresh reading can CHANGE the safety
+            # decision; decision uncertainty g(p)=4p(1-p) (scaled to [0,1]) peaks
+            # at the p~0.5 band edge and vanishes once the outcome is certain.
+            # This is the leading-order value-of-information for a binary safety
+            # decision, and avoids double-counting the p>=0.55 detector rule.
+            vou=4.0*true[i]['p']*(1.0-true[i]['p'])
+            score=0.55*vou+0.25*err+0.20*age_score
         scores.append(score)
     return sorted(range(3), key=lambda i:scores[i], reverse=True)[:B]
 

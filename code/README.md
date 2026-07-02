@@ -43,6 +43,47 @@ tau1 = 0.38
 tau2 = 0.54
 ```
 
+The urgency score uses the value-of-uncertainty (VoU) risk channel
+`g(p)=4p(1-p)`, the leading-order value of information for a binary safety
+decision. It replaces the earlier raw-probability heuristic.
+
+## 2b. Urgency-term ablation
+
+```bash
+python3 code/run_rabs_ablation.py
+```
+
+Zeroes each urgency term in turn (and compares the VoU form against raw `p`)
+on the real 3-zone replay. Writes:
+
+```text
+outputs/rabs/rabs_ablation_summary.csv
+```
+
+## 2c. Scalability stress test
+
+```bash
+python3 code/run_rabs_scaling.py
+```
+
+Synthesizes N-zone replays (N=3,8,12,20) anchored on the three real streams
+(independent circular time offsets + small thermal biases) and shows the
+RABS-PD advantage over full polling growing with N. This is a scheduler
+stress test, not a claim of additional measured data. Writes:
+
+```text
+outputs/rabs/rabs_scaling_summary.csv
+```
+
+## 2d. Manuscript tables
+
+```bash
+python3 code/make_manuscript_tables.py   # needs numpy+scipy for paired stats
+```
+
+Regenerates the manuscript-format LaTeX tables (sota_comparison, wilcoxon,
+sensitivity, nonstationary, scalability, ablation_urgency) from the fresh CSVs.
+
 ## 3. Figures from result CSVs
 
 ```bash
