@@ -38,24 +38,27 @@ mpl.rcParams.update({
 })
 
 # Policies discussed in the manuscript tables/narrative (severe-burst scenario).
+# annotate flag: label directly only for well-separated points. The tight
+# B=2 cluster (Fixed-B2, Max-AoI, VoI) is left to the legend+markers to avoid
+# overlapping text; their markers/colours already distinguish them.
 SPEC = [
-    # key            label             color       marker  size  label_dx label_dy ha
-    ("fixed_b1",     "Fixed-B1",       "#9e9e9e",  "v",    70,    0.04,  0.000, "left"),
-    ("fixed_b2",     "Fixed-B2",       "#6d6d6d",  "v",    70,    0.04,  0.000, "left"),
-    ("fixed_b3",     "Fixed-B3",       "#3b3b3b",  "v",    70,   -0.04,  0.0015, "right"),
-    ("max_aoi",      "Max-AoI (B=2)",  "#f58518",  "X",    85,    0.00, -0.0040, "center"),
-    ("voi_b2",       "VoI (B=2)",      "#8c564b",  "P",    80,    0.00,  0.0028, "center"),
-    ("rabs_h",       "RABS-H",         "#1f77b4",  "o",    65,    0.04,  0.000, "left"),
-    ("rabs_l",       "RABS-L",         "#2ca02c",  "s",    65,   -0.04,  0.000, "right"),
-    ("rabs_pd",      "RABS-PD (proposed)", "#d62728", "D", 110,   0.045, 0.0010, "left"),
-    ("oracle_b",     "Oracle (reference)", "#bcbd22", "*", 200,   0.045, 0.000, "left"),
+    # key            label             color       marker  size  dx      dy      ha       annotate
+    ("fixed_b1",     "Fixed-B1",       "#9e9e9e",  "v",    70,    0.06,  0.000, "left",  True),
+    ("fixed_b2",     "Fixed-B2",       "#6d6d6d",  "v",    70,    0.10,  0.0075, "left", False),
+    ("fixed_b3",     "Fixed-B3",       "#3b3b3b",  "v",    70,   -0.06,  0.0015, "right", True),
+    ("max_aoi",      "Max-AoI (B=2)",  "#f58518",  "X",    95,   -0.10, -0.0035, "right", False),
+    ("voi_b2",       "VoI (B=2)",      "#8c564b",  "P",    80,    0.10, -0.0045, "left", False),
+    ("rabs_h",       "RABS-H",         "#1f77b4",  "o",    65,    0.05,  0.0020, "left",  True),
+    ("rabs_l",       "RABS-L",         "#2ca02c",  "s",    65,   -0.05,  0.000, "right", True),
+    ("rabs_pd",      "RABS-PD (proposed)", "#d62728", "D", 110,   0.05,  0.0015, "left", True),
+    ("oracle_b",     "Oracle (reference)", "#bcbd22", "*", 200,   0.05,  0.000, "left",  True),
 ]
 
 df = pd.read_csv(SUMMARY)
 sev = df[df.network == "severe_burst"].set_index("policy")
 
 fig, ax = plt.subplots(figsize=(7.2, 4.3))
-for key, label, color, marker, size, dx, dy, ha in SPEC:
+for key, label, color, marker, size, dx, dy, ha, annotate in SPEC:
     if key not in sev.index:
         print(f"[WARN] missing policy in CSV: {key}")
         continue
@@ -63,6 +66,12 @@ for key, label, color, marker, size, dx, dy, ha in SPEC:
     x, y = float(r.avg_bandwidth_mean), float(r.objective_mean)
     ax.scatter(x, y, s=size, color=color, edgecolor="black",
                linewidth=0.8, label=label, zorder=3, marker=marker)
+    # Label well-separated points directly; the tight B=2 cluster
+    # (Fixed-B2/Max-AoI/VoI) relies on the legend to avoid overlapping text.
+    if annotate:
+        ax.annotate(label, (x, y), xytext=(x + dx, y + dy), ha=ha,
+                    va="center", fontsize=7.0, color=color, zorder=4,
+                    fontweight="bold" if key == "rabs_pd" else "normal")
 
 # Shade the desirable low-bandwidth region (qualitative guide only).
 ax.axvspan(0.9, 1.6, color="#2ca02c", alpha=0.06, zorder=0)
