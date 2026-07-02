@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Fetch real ERA5 hourly 2-m temperature for the three Mekong-delta stations
-used in the RABS climate replay, from the Open-Meteo historical weather API.
+"""Fetch real ERA5 hourly 2-m temperature for Mekong-delta stations used in the
+RABS climate replay, from the Open-Meteo historical weather API.
+
+The first three stations (Can Tho, Soc Trang, Ca Mau) are the N=3 main-comparison
+zones. The full list of 20 real Mekong-delta locations is used for the
+scalability evaluation: every zone is a genuine ERA5 reanalysis series at a real
+Delta town, so N up to 20 is real climate data, not synthesized traces.
 
 Reproducible: given the same station coordinates and year, the API returns the
 same ERA5 reanalysis series. Output CSVs (time, temp_c) are written under
 data/era5_vn/ and consumed by code/run_rabs_era5_main.py and friends.
 
 Usage:
-    python3 data/fetch_era5_vn.py            # fetches 2024 for all 3 stations
+    python3 data/fetch_era5_vn.py            # fetches 2024 for all 20 stations
 
 Stdlib-only (urllib + csv); no API key required.
 """
@@ -21,11 +26,31 @@ from pathlib import Path
 OUT = Path(__file__).resolve().parent / "era5_vn"
 OUT.mkdir(parents=True, exist_ok=True)
 
-# Mekong-delta stations (lat, lon) — same three zones as the manuscript.
+# Real Mekong-delta locations (lat, lon). The first three are the N=3 main
+# zones; the remainder are additional real Delta towns used only to grow the
+# number of monitored zones in the scalability evaluation. All are genuine
+# ERA5 grid points -- no synthetic zones.
 STATIONS = {
-    "can_tho":   (10.0452, 105.7469),
-    "soc_trang": (9.6037, 105.9739),
-    "ca_mau":    (9.1769, 105.1524),
+    "can_tho":    (10.0452, 105.7469),
+    "soc_trang":  (9.6037, 105.9739),
+    "ca_mau":     (9.1769, 105.1524),
+    "long_xuyen": (10.3860, 105.4381),
+    "rach_gia":   (10.0125, 105.0808),
+    "my_tho":     (10.3600, 106.3600),
+    "ben_tre":    (10.2415, 106.3759),
+    "vinh_long":  (10.2537, 105.9722),
+    "tra_vinh":   (9.9347, 106.3453),
+    "cao_lanh":   (10.4593, 105.6329),
+    "tan_an":     (10.5350, 106.4137),
+    "bac_lieu":   (9.2850, 105.7244),
+    "vi_thanh":   (9.7840, 105.4700),
+    "chau_doc":   (10.7000, 105.1200),
+    "ha_tien":    (10.3830, 104.4880),
+    "sa_dec":     (10.2930, 105.7560),
+    "go_cong":    (10.3540, 106.6670),
+    "nga_bay":    (9.8140, 105.8180),
+    "duyen_hai":  (9.6180, 106.5030),
+    "phu_quoc":   (10.2270, 103.9670),
 }
 YEAR = 2024
 BASE = "https://archive-api.open-meteo.com/v1/archive"

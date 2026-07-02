@@ -44,15 +44,16 @@ against a decision-uncertainty variant `g(p)=4p(1-p)`. On this heavy-tailed
 regime raw probability wins, because heat episodes push `p_vio -> 1` and the
 at-risk zones must not be de-ranked.
 
-## 3. Scalability stress test
+## 3. Scalability across real stations
 
 ```bash
 python3 code/run_rabs_era5_scaling.py    # -> outputs/rabs/rabs_era5_scaling_summary.csv
 ```
 
-Synthetic multi-zone traces (N = 3, 8, 12, 20) anchored on the three real
-stations (independent circular time offsets + small thermal biases). A
-scheduler stress test, not a claim of extra measured data.
+Scales the deployment across up to 20 distinct real Mekong-delta ERA5 stations
+(N = 3, 8, 12, 20), each a separate real location fetched by
+`data/fetch_era5_vn.py`. No synthetic or replicated traces: larger N is a
+genuinely larger real-data deployment.
 
 ## 4. Manuscript tables + figure
 

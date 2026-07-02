@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""RABS scalability stress test on the HARD ERA5 Vietnam replay.
+"""RABS scalability evaluation on the HARD ERA5 Vietnam replay.
 
-The three Mekong-delta stations (Can Tho, Soc Trang, Ca Mau) are the three real
-zones. To probe scaling we synthesize N-zone traces by replaying the three real
-station streams with independent circular time offsets and small per-zone
-thermal biases, then recomputing violations against the heat-stress band. This
-is a scheduler stress test, NOT a claim of additional measured stations.
+Scaling is measured on real ERA5 hourly 2-m temperature (2024) for up to 20
+Mekong-delta stations spanning the whole delta (province capitals and towns).
+Each monitored zone is a distinct real location -- no synthetic or replicated
+traces -- so larger N is a genuinely larger real-data deployment, not a
+stress-test artefact.
 
-Same VoU urgency channel g(p)=4p(1-p) and primal-dual budget rule as the main
-ERA5 experiment. Stdlib-only, reproducible. Lower objective is better.
+Same violation-probability urgency channel and primal-dual budget rule as the
+main ERA5 experiment. Stdlib-only, reproducible. Lower objective is better.
 """
 from __future__ import annotations
 import csv, math, random, statistics
@@ -18,7 +18,12 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / 'data/era5_vn'
 OUT = ROOT / 'outputs/rabs'; OUT.mkdir(parents=True, exist_ok=True)
 
-STATIONS = ['can_tho', 'soc_trang', 'ca_mau']
+# 20 real Mekong-delta stations, ordered so the first three match the main
+# experiment. Each is a distinct real ERA5 location (see data/fetch_era5_vn.py).
+STATIONS = ['can_tho', 'soc_trang', 'ca_mau', 'long_xuyen', 'rach_gia',
+            'my_tho', 'ben_tre', 'vinh_long', 'tra_vinh', 'cao_lanh',
+            'tan_an', 'bac_lieu', 'vi_thanh', 'chau_doc', 'ha_tien',
+            'sa_dec', 'go_cong', 'nga_bay', 'duyen_hai', 'phu_quoc']
 SAFE_MIN, SAFE_MAX = 22.0, 34.0
 SIGMA = 1.2
 NETWORKS = {'burst': (0.06, 0.035, 0.65, 0.22),
@@ -33,9 +38,10 @@ def phi(z):
     return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
 
 
-def read_base():
+def read_stations(n):
+    """Read the first n real station streams (one distinct location each)."""
     cols = []
-    for s in STATIONS:
+    for s in STATIONS[:n]:
         xs = []
         with (DATA / f'{s}_2024.csv').open(newline='', encoding='utf-8') as f:
             for r in csv.DictReader(f):
@@ -43,23 +49,17 @@ def read_base():
                     xs.append(float(r['temp_c']))
         cols.append(xs)
     T = min(len(c) for c in cols)
-    return [[cols[zi][t] for zi in range(3)] for t in range(T)]
+    return [[cols[zi][t] for zi in range(n)] for t in range(T)]
 
 
-def make_zone_steps(base, N, gen):
-    """Synthesize N zone temperature streams from the 3 real stations."""
-    T = len(base)
-    specs = []
-    for j in range(N):
-        src = j % 3
-        offset = gen.randrange(T)
-        bias = 0.0 if j < 3 else gen.uniform(-1.5, 1.5)  # first 3 zones = real stations
-        specs.append((src, offset, bias))
+def zone_steps_real(n):
+    """Build N-zone step records directly from N distinct real stations."""
+    base = read_stations(n)
     zsteps = []
-    for t in range(T):
+    for t in range(len(base)):
         row = []
-        for (src, offset, bias) in specs:
-            x = base[(t + offset) % T][src] + bias
+        for zi in range(n):
+            x = base[t][zi]
             p = phi((SAFE_MIN - x) / SIGMA) + (1.0 - phi((SAFE_MAX - x) / SIGMA))
             p = min(1.0, max(0.0, p))
             v = 1 if (x < SAFE_MIN or x > SAFE_MAX) else 0
@@ -196,13 +196,12 @@ def ci(xs): return 1.96 * statistics.stdev(xs) / (len(xs) ** 0.5) if len(xs) > 1
 
 
 def main():
-    base = read_base()
-    starts = [i * PER for i in range(N_STARTS) if (i + 1) * PER <= len(base)]
+    T0 = len(read_stations(3))
+    starts = [i * PER for i in range(N_STARTS) if (i + 1) * PER <= T0]
     policies = ['fixed_full', 'max_aoi', 'rabs_pd']
     raw = []
-    zone_gen = random.Random(2026)
     for N in N_VALUES:
-        zsteps = make_zone_steps(base, N, zone_gen)
+        zsteps = zone_steps_real(N)
         for net in NETWORKS:
             for start in starts:
                 for seed in SEEDS:

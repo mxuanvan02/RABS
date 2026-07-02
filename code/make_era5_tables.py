@@ -131,7 +131,7 @@ def gen_scalability(rows):
     by = {(r["N"], r["policy"]): r for r in rows}
     Ns = ["3", "8", "12", "20"]
     lines = [r"\begin{table}[htbp]",
-             r"\caption{Scalability stress test on the ERA5 replay (synthetic multi-zone traces anchored on the three real stations). RABS-PD's advantage over full polling grows with the number of monitored zones $N$.}",
+             r"\caption{Scalability on the ERA5 replay across up to $20$ distinct real Mekong-delta stations (each monitored zone is a separate ERA5 location, no synthetic traces). RABS-PD's bandwidth saving over full polling grows with the number of monitored zones $N$.}",
              r"\label{tab:scalability}", r"\centering", r"\resizebox{\linewidth}{!}{",
              r"\begin{tabular}{lccccc}", r"\toprule",
              r"$N$ & Policy & Avg. Bw. & Save (\%) & Safety Obj. & Missed (\%)  \\", r"\midrule"]

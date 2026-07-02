@@ -2,46 +2,129 @@
 
 Reproducible code and data for the paper
 
-> **Self-Tuning Risk-Adaptive Bandwidth Scaling for Safety-Critical Smart Agriculture IoT Networks**
+> **Self-Tuning Risk-Adaptive Bandwidth Scaling for Safety-Critical Smart-Agriculture IoT Networks**
 
-RABS treats the per-slot polling budget as an online control variable. Its
+RABS treats the per-slot polling budget as an **online control variable**. Its
 deployed variant **RABS-PD** adapts bandwidth, age, and missed-risk penalties
 through a primal–dual (Lagrangian) feedback rule, and ranks sensors by a
 pre-transmission urgency score combining freshness, predicted deviation, and
-threshold-violation probability.
+threshold-violation probability. The budget rule is *derived* as online dual
+ascent on a long-run constrained program, with bounded multipliers and
+`O(1/T)` asymptotic feasibility.
 
-## Dataset
+---
 
-The evaluation replays **real ERA5 hourly 2-m temperature (2024)** for three
-Mekong-delta stations — **Can Tho, Soc Trang, Ca Mau** — Vietnam's principal
-rice-growing region. The trace is a real-climate proxy for heat-stress
-monitoring in smart agriculture (reanalysis climate data, not in-field sensor
-data). It is a deliberately hard, heavy-tailed regime: 2–4% of hours exceed
-34 °C, with peaks near 38 °C.
-
-Data is fetched from the public Open-Meteo ERA5 archive and is fully
-reproducible:
+## TL;DR — reproduce everything with one command
 
 ```bash
-python3 data/fetch_era5_vn.py     # writes data/era5_vn/{can_tho,soc_trang,ca_mau}_2024.csv
+git clone https://github.com/mxuanvan02/RABS.git
+cd RABS
+bash reproduce.sh
 ```
 
-## Reproduce the paper results
+That script creates a virtual environment, installs the two dependencies,
+fetches the real ERA5 data, runs all experiments, and regenerates every table
+and figure. Details and a manual step-by-step path are below.
 
-Run from the project root (needs `numpy`+`scipy` for the paired statistics;
-the simulators themselves are stdlib-only):
+---
+
+## Requirements
+
+| Requirement | Notes |
+|---|---|
+| Python | ≥ 3.9 (standard library only for the simulators) |
+| `numpy`, `scipy` | only for the paired Wilcoxon statistics in the table generator |
+| `matplotlib` | only for the trade-off figure (`make_tradeoff_plot.py`) |
+| Internet | one-time only, to fetch ERA5 from the public Open-Meteo archive |
+
+No API key is required. The simulators are **deterministic** (fixed seeds), so
+re-running yields byte-identical CSVs.
+
+---
+
+## Dataset — real ERA5, fully reproducible
+
+The evaluation replays **real ERA5 hourly 2-m temperature (2024)** for
+**20 distinct Mekong-delta stations** spanning the whole delta — Vietnam's
+principal rice-growing region:
+
+> Can Tho, Soc Trang, Ca Mau, Long Xuyen, Rach Gia, My Tho, Ben Tre,
+> Vinh Long, Tra Vinh, Cao Lanh, Tan An, Bac Lieu, Vi Thanh, Chau Doc,
+> Ha Tien, Sa Dec, Go Cong, Nga Bay, Duyen Hai, Phu Quoc.
+
+The first three (Can Tho, Soc Trang, Ca Mau) are the `N=3` main-experiment
+zones; the scalability study (`N` up to 20) uses **distinct real stations**,
+one real location per monitored zone — there are **no synthetic or replicated
+traces**.
+
+This is a real-climate proxy for heat-stress monitoring in smart agriculture
+(reanalysis climate data, not in-field sensor data). It is a deliberately hard,
+heavy-tailed regime: 2–4 % of hours exceed 34 °C, with peaks near 39 °C.
+
+Data is fetched from the public Open-Meteo ERA5 archive:
 
 ```bash
-python3 code/run_rabs_era5_main.py       # main comparison  -> outputs/rabs/rabs_era5_summary.csv
-python3 code/run_rabs_era5_ablation.py   # urgency ablation -> outputs/rabs/rabs_era5_ablation_summary.csv
-python3 code/run_rabs_era5_scaling.py    # N in {3,8,12,20} -> outputs/rabs/rabs_era5_scaling_summary.csv
-python3 code/make_era5_tables.py         # LaTeX tables (sota, wilcoxon, scalability, ablation)
+python3 data/fetch_era5_vn.py     # writes data/era5_vn/<station>_2024.csv (20 files)
+```
+
+Given the same station coordinates and year, the API returns the same ERA5
+reanalysis series, so the fetch is reproducible. Station coordinates are listed
+in `data/fetch_era5_vn.py`.
+
+---
+
+## Reproduce the paper results — step by step
+
+If you prefer the manual path over `reproduce.sh`, run these from the project
+root:
+
+```bash
+# 0. (recommended) isolated environment
+python3 -m venv .venv && source .venv/bin/activate
+python -m pip install --upgrade pip && python -m pip install numpy scipy matplotlib
+
+# 1. fetch the real ERA5 data (one time; ~20 short requests)
+python3 data/fetch_era5_vn.py
+
+# 2. main comparison  ->  Table 1 (sota) and Table 2 (wilcoxon)
+python3 code/run_rabs_era5_main.py         # -> outputs/rabs/rabs_era5_summary.csv
+
+# 3. urgency-term ablation  ->  Table 4
+python3 code/run_rabs_era5_ablation.py     # -> outputs/rabs/rabs_era5_ablation_summary.csv
+
+# 4. scalability across 20 real stations  ->  Table 3
+python3 code/run_rabs_era5_scaling.py      # -> outputs/rabs/rabs_era5_scaling_summary.csv
+
+# 5. regenerate all LaTeX tables from the fresh CSVs
+python3 code/make_era5_tables.py           # -> outputs/tables/{sota_comparison,wilcoxon,scalability,ablation_urgency}.tex
+
+# 6. regenerate the bandwidth–objective trade-off figure
 RABS_SUMMARY_CSV=outputs/rabs/rabs_era5_summary.csv \
-  python3 code/make_tradeoff_plot.py     # bandwidth-objective trade-off figure
+  python3 code/make_tradeoff_plot.py       # -> outputs/figures/tradeoff_plot.pdf
 ```
 
-All reported numbers are emitted from these scripts; the manuscript tables are
-generated by `make_era5_tables.py`, so the paper cannot drift from the code.
+All reported numbers are emitted by these scripts. The manuscript tables are
+generated by `make_era5_tables.py`, so **the paper cannot drift from the code**.
+
+### Which script produces which artifact
+
+| Paper element | Script | Output |
+|---|---|---|
+| Table 1 — main comparison (sota) | `run_rabs_era5_main.py` → `make_era5_tables.py` | `outputs/tables/sota_comparison.tex` |
+| Table 2 — paired Wilcoxon | `run_rabs_era5_main.py` → `make_era5_tables.py` | `outputs/tables/wilcoxon.tex` |
+| Table 3 — scalability (20 real stations) | `run_rabs_era5_scaling.py` → `make_era5_tables.py` | `outputs/tables/scalability.tex` |
+| Table 4 — urgency ablation | `run_rabs_era5_ablation.py` → `make_era5_tables.py` | `outputs/tables/ablation_urgency.tex` |
+| Trade-off figure | `make_tradeoff_plot.py` | `outputs/figures/tradeoff_plot.pdf` |
+
+---
+
+## Method summary
+
+- **Urgency score** (which sensors to poll): `0.55·p_vio + 0.25·deviation + 0.20·AoI`.
+- **Budget rule** (how many to poll): per-slot Lagrangian minimizing
+  `loss + (c_B+λ_B)·B + (c_A+λ_A)·AoI + (c_M+λ_M)·miss − c_R·R·B`, with the
+  three multipliers `λ` updated by projected dual ascent toward the average
+  bandwidth / AoI / missed-rate targets.
 
 ## Baselines
 
@@ -54,3 +137,7 @@ a per-slot guide, not a cumulative lower bound).
 Earlier exploratory pipeline on a mild-tail greenhouse replay and a
 value-of-uncertainty (VoU) urgency variant. Retained for provenance only; it is
 **not** part of the paper's reported results, which use the ERA5 pipeline above.
+
+## License
+
+See [`LICENSE`](LICENSE).
