@@ -13,11 +13,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
+import os
 ROOT = Path(__file__).resolve().parents[1]
-SUMMARY = ROOT / "outputs" / "rabs" / "rabs_summary.csv"
+# Source CSV can be overridden (e.g. the ERA5 summary) via RABS_SUMMARY_CSV.
+SUMMARY = Path(os.environ.get("RABS_SUMMARY_CSV", ROOT / "outputs" / "rabs" / "rabs_summary.csv"))
 # Output to a local, repo-relative figures/ dir by default. Set RABS_FIG_DIR
 # to redirect the output elsewhere (e.g. a manuscript figures folder).
-import os
 MAN_FIG = Path(os.environ.get("RABS_FIG_DIR", ROOT / "figures"))
 MAN_FIG.mkdir(parents=True, exist_ok=True)
 
@@ -51,7 +52,7 @@ SPEC = [
     ("rabs_h",       "RABS-H",         "#1f77b4",  "o",    65,    0.05,  0.0020, "left",  True),
     ("rabs_l",       "RABS-L",         "#2ca02c",  "s",    65,   -0.05,  0.000, "right", True),
     ("rabs_pd",      "RABS-PD (proposed)", "#d62728", "D", 110,   0.05,  0.0015, "left", True),
-    ("oracle_b",     "Oracle (reference)", "#bcbd22", "*", 200,   0.05,  0.000, "left",  True),
+    ("oracle_b",     "Greedy clairvoyant", "#bcbd22", "*", 200,   0.05,  0.000, "left",  True),
 ]
 
 df = pd.read_csv(SUMMARY)
