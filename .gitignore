@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS/editor
+.DS_Store
+*.log
+
+# Generated reproduction artifacts
+outputs/
+figures/
+*.png
+*.svg
+*.pdf
+
+# Non-release working files
+_backups/
+*_draft*.md
