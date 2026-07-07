@@ -4,13 +4,12 @@
 Three Mekong-delta stations (Can Tho, Soc Trang, Ca Mau) act as the N=3
 monitored zones. Hourly 2-m temperature for 2024 (Open-Meteo ERA5 archive,
 data/era5_vn/) has genuine heat episodes (2-4% of hours above 34C, peaks ~38C),
-so the loss distribution is heavy-tailed -- a much harder regime than the
-mild-tail greenhouse replay.
+so the loss distribution is heavy-tailed and suitable for testing bandwidth
+adaptation under safety-relevant heat episodes.
 
 This script reproduces the full baseline comparison (Fixed-B1/B2/B3, Max-AoI,
-VoI-B2, RABS-H/L, RABS-PD, Oracle) on that hard data, using the SAME VoU
-urgency channel g(p)=4p(1-p) and primal-dual budget rule as the greenhouse
-experiment. Lower is better on every metric except Save/Avg. Bw.
+VoI-B2, RABS-H/L, RABS-PD, Oracle) on that data. Lower is better on every
+metric except Save/Avg. Bw.
 
 Stdlib-only, reproducible.
 """

@@ -4,7 +4,7 @@ This repository contains the public reproduction package for the paper:
 
 > **Self-Tuning Risk-Adaptive Bandwidth Scaling for Safety-Critical Smart-Agriculture IoT Networks**
 
-The repository is intentionally limited to the final paper-facing artifacts: source code, public input data/fetch scripts, and commands needed to reproduce the reported tables and figures. Development notes, exploratory variants, drafts, and internal working material are not part of this release.
+The repository is intentionally limited to the final paper-facing artifacts: source code, public input data/fetch scripts, and commands needed to reproduce the reported tables and figures.
 
 ## Reproduce the reported results
 

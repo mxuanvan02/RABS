@@ -66,5 +66,4 @@ Writes LaTeX tables under `outputs/tables/` and the trade-off figure under `outp
 ## Notes
 
 - This directory contains the final paper-facing reproduction pipeline only.
-- Development notebooks, exploratory variants, drafts, and internal working files are intentionally excluded.
 - Use `bash reproduce.sh` from the repository root for the full end-to-end run.
