@@ -69,25 +69,40 @@ fi
 echo "==> [4/5] running experiments"
 echo "    - main comparison  (Table 1 sota, Table 2 wilcoxon)"
 python code/run_rabs_era5_main.py
-echo "    - urgency ablation (Table 4)"
+echo "    - urgency ablation (baseline for the revised Table 4 cross-check)"
 python code/run_rabs_era5_ablation.py
 echo "    - scalability, 20 real stations (Table 3)"
 python code/run_rabs_era5_scaling.py
+echo "    - revision round: extreme-burst main comparison (Reviewer 2, Q2)"
+python code/run_rabs_era5_main_extreme.py
+echo "    - revision round: risk-channel decomposition, 2 regimes (Reviewer 2, Q4)"
+python code/abl_q4_full.py
+echo "    - revision round: surrogate-vs-realized calibration (Reviewer 2, Q5)"
+python code/abl_q5_calibration.py
 
 # ----------------------------------------------------------------------------
 # 5. Regenerate manuscript tables + figure from the fresh CSVs
 # ----------------------------------------------------------------------------
 echo "==> [5/5] regenerating LaTeX tables + trade-off figure"
 python code/make_era5_tables.py
+# The revised Table 4 must be written AFTER make_era5_tables.py, which emits the
+# legacy 5-row ablation table. make_ablation_table_final.py rebuilds it on the
+# consistent deployed raw-p basis (8 rows) and aborts if any overlapping value
+# drifts from the submitted ablation summary.
+python code/make_ablation_table_final.py
 RABS_SUMMARY_CSV=outputs/rabs/rabs_era5_summary.csv \
-  python code/make_tradeoff_plot.py
+  python code/make_tradeoff_plot_v2.py
 
 echo
 echo "============================================================"
 echo " DONE. Reproduced artifacts:"
-echo "   outputs/rabs/rabs_era5_summary.csv           (main)"
-echo "   outputs/rabs/rabs_era5_ablation_summary.csv  (ablation)"
-echo "   outputs/rabs/rabs_era5_scaling_summary.csv   (scalability)"
+echo "   outputs/rabs/rabs_era5_summary.csv            (main)"
+echo "   outputs/rabs/rabs_era5_ablation_summary.csv   (ablation baseline)"
+echo "   outputs/rabs/rabs_era5_scaling_summary.csv    (scalability)"
+echo "   outputs/rabs/rabs_era5_extreme_summary.csv    (extreme burst, Q2)"
+echo "   outputs/rabs/rabs_q4_full_ablation.csv        (risk decomposition, Q4)"
+echo "   outputs/rabs/rabs_q4_final_matrix.csv         (revised Table 4 source)"
+echo "   outputs/rabs/rabs_q5_surrogate_calibration.csv (bound calibration, Q5)"
 echo "   outputs/tables/{sota_comparison,wilcoxon,scalability,ablation_urgency}.tex"
 echo "   outputs/figures/tradeoff_plot.pdf"
 echo "============================================================"

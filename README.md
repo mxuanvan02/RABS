@@ -69,9 +69,39 @@ python3 code/run_rabs_era5_scaling.py
 # 5. Regenerate LaTeX tables
 python3 code/make_era5_tables.py
 
-# 6. Regenerate the trade-off figure
+# 6. Regenerate the trade-off figure (v2: leader-line labels, no overlaps)
 RABS_SUMMARY_CSV=outputs/rabs/rabs_era5_summary.csv \
-  python3 code/make_tradeoff_plot.py
+  python3 code/make_tradeoff_plot_v2.py
+```
+
+## Revision-round experiments (peer-review response)
+
+The revision round for the STAIS reviews adds three analyses, all deterministic
+and seeded like the main pipeline:
+
+```bash
+# R1. Risk-channel decomposition (Reviewer 2, Q4): ablates the ranking risk
+#     weight, the budget relaxation -c_R*R*b, and the missed-risk surrogate,
+#     individually and jointly, on severe_burst AND a harsher extreme_burst
+#     regime (12%/90% Gilbert-Elliott, ~48% overall loss).
+#     -> outputs/rabs/rabs_q4_full_ablation.csv (+ _stats.csv)
+python3 code/abl_q4_full.py
+
+# R2. Revised Table 4 (consistent deployed raw-p basis, 8 rows; cross-checks
+#     every overlapping value against the submitted ablation before writing):
+#     -> outputs/rabs/rabs_q4_final_matrix.csv
+#     -> outputs/tables/ablation_urgency.tex
+python3 code/make_ablation_table_final.py
+
+# R3. Surrogate-vs-realized calibration for the O(1/T) bound discussion
+#     (Reviewer 2, Q5): per-window E[Mhat], E[m], correlation.
+#     -> outputs/rabs/rabs_q5_surrogate_calibration.csv
+python3 code/abl_q5_calibration.py
+
+# R4. Full baseline comparison under the extreme_burst regime (Reviewer 2,
+#     Q2: the missed-event ordering reverses in RABS-PD's favour there).
+#     -> outputs/rabs/rabs_era5_extreme_{raw,summary}.csv
+python3 code/run_rabs_era5_main_extreme.py
 ```
 
 Expected generated outputs:
@@ -95,7 +125,12 @@ code/
   run_rabs_era5_ablation.py   Urgency-channel ablation
   run_rabs_era5_scaling.py    Scalability experiment
   make_era5_tables.py         LaTeX table generator
-  make_tradeoff_plot.py       Figure generator
+  make_tradeoff_plot.py       Figure generator (v1, submitted layout)
+  make_tradeoff_plot_v2.py    Figure generator (v2, leader-line labels)
+  run_rabs_era5_main_extreme.py  Extreme-burst main comparison (revision Q2)
+  abl_q4_full.py              Risk-channel decomposition, 2 regimes (revision Q4)
+  make_ablation_table_final.py   Revised Table 4 generator with cross-check
+  abl_q5_calibration.py       Surrogate-vs-realized calibration (revision Q5)
 
 data/
   fetch_era5_vn.py            Public ERA5 data fetcher
